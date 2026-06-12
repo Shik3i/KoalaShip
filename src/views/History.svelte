@@ -1,7 +1,8 @@
 <script lang="ts">
   import { orders, getProducts, openPackage, returnOrder, user, manualTrackingRefresh, carriers } from '../lib/store.svelte';
   import { t } from '../lib/i18n.svelte';
-  
+  import { pickDeterministic, pickRandom, unboxingSteps as unboxingPool, refreshTexts } from '../lib/content';
+
   // Unboxing Sequence State (Local to History)
   let activeUnboxingOrderId = $state<string | null>(null);
   let unboxingClicks = $state(0);
@@ -17,18 +18,18 @@
     if (!activeProduct) return ['Paket öffnen'];
     
     if (activeProduct.category === 'MYSTERY') {
-       return ['Warnhinweise ignorieren', 'Schweres Schloss knacken', 'Deckel anheben'];
+       return pickDeterministic(unboxingPool.MYSTERY, activeOrder!.id);
     }
     if (activeProduct.inventoryType === 'VEHICLE') {
-       return ['Speditions-Palette sichten', 'Schwerlastgurte durchschneiden', 'Schutzfolie abreißen'];
+       return pickDeterministic(unboxingPool.VEHICLE, activeOrder!.id);
     }
     if (activeProduct.inventoryType === 'OUTFIT' || activeProduct.inventoryType === 'COLLECTIBLE') {
-       return ['Luftpolsterumschlag angrabbeln', 'Aufreißen (Vorsicht!)', 'Papier-Füllmaterial wühlen'];
+       return pickDeterministic(unboxingPool.OUTFIT, activeOrder!.id);
     }
     if (activeProduct.inventoryType === 'ELECTRONICS') {
-       return ['Premium-Karton bewundern', 'Siegel mit dem Messer durchtrennen', 'Styropor knirschen lassen'];
+       return pickDeterministic(unboxingPool.ELECTRONICS, activeOrder!.id);
     }
-    return ['Versandlabel prüfen', 'Klebeband lösen', 'Schutzmaterial entfernen'];
+    return pickDeterministic(unboxingPool.DEFAULT, activeOrder!.id);
   });
 
   let packageVisual = $derived.by(() => {
@@ -201,7 +202,7 @@
                   class="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 flex items-center gap-2 disabled:opacity-50 disabled:cursor-wait transition-colors"
                >
                   {#if refreshingOrderId === order.id}
-                     <span class="animate-spin inline-block">↻</span> <span class="hidden sm:inline">Prüfe Server...</span>
+                     <span class="animate-spin inline-block">↻</span> <span class="hidden sm:inline">{pickRandom(refreshTexts)}</span>
                   {:else}
                      <span>🔄</span> <span class="hidden sm:inline">Tracking aktualisieren</span>
                   {/if}

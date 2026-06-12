@@ -1,32 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import news from '../data/news-ticker.json';
-  import { orders, user } from '../lib/store.svelte';
+  import { newstickerMessages } from '../lib/content';
+  import { createPRNG, getDaySeed, pickSeeded } from '../lib/random';
 
-  type Requirement = 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CART' | 'NO_ORDERS';
-  type NewsItem = {
-    id: string;
-    category: string;
-    text: string;
-    weight?: number;
-    requires?: Requirement;
-  };
-
-  let current = $state<NewsItem>(news[0] as NewsItem);
+  let tickCount = 0;
+  let current = $state(pickSeeded(newstickerMessages, createPRNG(getDaySeed() + tickCount)));
   let paused = $state(false);
   let visible = $state(true);
 
-  function isEligible(item: NewsItem) {
-    if (!item.requires) return true;
-    if (item.requires === 'CART') return (user.cart?.length ?? 0) > 0;
-    if (item.requires === 'NO_ORDERS') return orders.length === 0;
-    return orders.some(order => order.status === item.requires);
-  }
-
   function pickNext() {
-    const eligible = (news as NewsItem[]).filter(item => item.id !== current.id && isEligible(item));
-    const weighted = eligible.flatMap(item => Array(Math.max(1, item.weight ?? 1)).fill(item));
-    if (weighted.length) current = weighted[Math.floor(Math.random() * weighted.length)];
+    tickCount++;
+    current = pickSeeded(newstickerMessages, createPRNG(getDaySeed() + tickCount));
   }
 
   onMount(() => {
@@ -57,7 +41,7 @@
       title="Klicken für die nächste Meldung"
     >
       <span class="news-ticker-text inline-block whitespace-nowrap text-sm font-bold">
-        <span class="mr-3 text-indigo-300 uppercase">[{current.category}]</span>{current.text}
+        {current}
       </span>
     </button>
     <span class="hidden shrink-0 text-[10px] font-bold uppercase tracking-widest text-indigo-300 sm:block">Satire</span>

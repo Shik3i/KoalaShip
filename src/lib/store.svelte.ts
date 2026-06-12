@@ -1,6 +1,8 @@
 import { i18nState } from './i18n.svelte';
 import { getLocalizedProducts, getLocalizedTrackingEvents } from './catalog';
-import { type UserProfile, type JobPreset as Job, type Product, type Order, type LatLng, type CartItem, type DeliveryMethod, type Property } from './types';
+import type { UserProfile, JobPreset as Job, Product, Order, LatLng, CartItem, DeliveryMethod, Property, MessageType } from './types';
+import { fillTemplate, inboxTemplates, pickRandom, trackingMilestones } from './content';
+import { createPRNG, getOrderSeed, getDaySeed, randomIntSeeded, randomRangeSeeded, pickSeeded, getHash } from './random';
 import { notify } from './notifications.svelte';
 import { playTone } from './sound';
 
@@ -310,9 +312,9 @@ export function getActiveShopEvent() {
 
 export function getProductPrice(product: Product, variantName?: string) {
     const event = getActiveShopEvent();
-    const day = Math.floor(Date.now() / 86400000);
-    const seed = [...product.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    let marketPrice = Math.round(product.price * (1 + Math.sin((day + seed) * 1.73) * 0.045));
+    const daySeed = getDaySeed();
+    const pricePrng = createPRNG(daySeed + product.id);
+    let marketPrice = Math.round(product.price * (1 + randomRangeSeeded(-0.045, 0.045, pricePrng)));
     
     if (variantName && product.variants?.length) {
         const variantGroup = product.variants[0];
@@ -327,10 +329,12 @@ export function getProductPrice(product: Product, variantName?: string) {
 
 export function getPriceHistory(product: Product, days = 30) {
     const today = Math.floor(Date.now() / 86400000);
-    const seed = [...product.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return Array.from({ length: days }, (_, index) => {
         const day = today - days + index + 1;
-        return { date: new Date(day * 86400000), price: Math.round(product.price * (1 + Math.sin((day + seed) * 1.73) * 0.045)) };
+        const date = new Date(day * 86400000);
+        const daySeed = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+        const pricePrng = createPRNG(daySeed + product.id);
+        return { date, price: Math.round(product.price * (1 + randomRangeSeeded(-0.045, 0.045, pricePrng))) };
     });
 }
 
@@ -345,45 +349,51 @@ export function generateMessage(orderId: string, type: import('./types').Message
 
     let sender = 'KoalaShip Info';
     let subject = '';
-    let content = '';
-
+    
+    // Subjects remain mostly static for clarity, content is random
     switch (type) {
         case 'ORDER_CONFIRMATION':
             sender = 'KoalaShip Bestellwesen';
             subject = `Bestellbestätigung: ${product.name}`;
-            content = `Hallo ${user.name || 'Kunde'},\n\nwir haben deine Bestellung (Order-ID: ${order.id}) dankend erhalten. Unser Mitarbeiter Günther hat dein Paket bereits gefunden und bereitet es für ${carrier.name} vor.\n\nEs wird schon bald auf die Reise gehen!\n\nViele Grüße,\nDein KoalaShip Team`;
             break;
         case 'SHIPPING_ANNOUNCEMENT':
             sender = 'KoalaShip Logistik';
             subject = `Versandbestätigung: ${product.name}`;
-            content = `Das Klebeband hat verloren! Deine Bestellung wurde sicher verpackt und an ${carrier.name} übergeben.\n\nDu kannst die Lieferung jederzeit im Dashboard verfolgen.`;
             break;
         case 'SORTING_CENTER':
             sender = carrier.name;
             subject = 'Paket wird sortiert';
-            content = `Dein Paket hat unser lokales Verteilzentrum erreicht. Es wurde erfolgreich gescannt, gewogen und auf ein kleineres Förderband geschoben.\n\nDer Endspurt beginnt!`;
             break;
         case 'DELIVERY_TODAY':
             sender = carrier.name;
             subject = 'Zustellung steht heute an!';
-            content = `Gute Nachrichten: Unser Fahrer ist in deiner Region unterwegs! \nBitte bereite dich auf die Annahme vor. Stelle sicher, dass du Hosen trägst (optional, aber empfohlen).\n\nWir sehen uns gleich!`;
             break;
         case 'DELIVERED':
             sender = carrier.name;
             subject = 'Paket erfolgreich zugestellt';
-            content = `Es ist vollbracht! Deine Bestellung wurde erfolgreich übergeben. \n\nWir hoffen, das Unboxing wird spektakulär. Gehe in dein Inventar, um das Paket zu öffnen!`;
             break;
         case 'INVOICE':
             sender = 'KoalaShip Buchhaltung';
             subject = `Rechnung zu Bestellung ${order.invoiceNumber}`;
-            content = `Hier ist deine (fiktive) Rechnung über ${order.totalPrice?.toLocaleString('de-DE')} KC.\n\nDa alles über dein unendliches Spielgeld läuft, haben wir den Betrag bereits abgebucht. Keine Mahnungen, keine Zinsen.\nDanke für den Einkauf!`;
             break;
         case 'REVIEW':
             sender = 'KoalaShip Customer Success';
             subject = `Wie gefällt dir: ${product.name}?`;
-            content = `Du hast dein Paket geöffnet! \nIst das Produkt so gut wie beschrieben? Hast du es schon fallen gelassen?\n\nDa dieses Spiel ohnehin keine echten Reviews speichert, kannst du das Produkt einfach weiter stillschweigend genießen.\nViel Spaß damit!`;
             break;
     }
+
+    const templateArray = inboxTemplates[type];
+    const template = pickSeeded(templateArray, createPRNG(getOrderSeed(order.id) + type));
+
+    const content = fillTemplate(template, {
+        userName: user.name || 'Kunde',
+        orderId: order.id,
+        carrierName: carrier.name,
+        productName: product.name,
+        stops: order.estimatedStops || 15,
+        totalPrice: order.totalPrice?.toLocaleString('de-DE') || '0',
+        invoiceNumber: order.invoiceNumber || 'Unbekannt'
+    });
 
     if (user.messages!.some(m => m.orderId === orderId && m.type === type)) return;
 
@@ -507,6 +517,8 @@ export function completeOnboarding(name: string, job: Job, homeLat: number, home
     user.occupation = job;
     user.homeLocation = { lat: homeLat, lng: homeLng };
     
+    user.profileSeed = Math.floor(Math.random() * 1000000000);
+    
     // Generate warehouse roughly 15km away
     const angle = Math.random() * Math.PI * 2;
     const distanceDegree = 15 / 111; // ~15km in degrees
@@ -580,11 +592,14 @@ export function purchaseProduct(productId: string, isExpress: boolean = false, q
 
     const deliveryEta = now + (isDeveloperMode() ? (deliveryDays * 60 * 1000) : (deliveryDays * 24 * 60 * 60 * 1000));
     
-    const selectedCarrier = carriers[Math.floor(Math.random() * carriers.length)];
+    const newOrderId = crypto.randomUUID();
+    const orderPrng = createPRNG(getOrderSeed(newOrderId));
+    
+    const selectedCarrier = pickSeeded(carriers, orderPrng);
     const randomStartMsg = selectedCarrier.trackingMilestones.received;
 
     const newOrder: Order = {
-        id: crypto.randomUUID(),
+        id: newOrderId,
         productId,
         orderDate: now,
         status: 'TRANSIT',
@@ -598,7 +613,7 @@ export function purchaseProduct(productId: string, isExpress: boolean = false, q
         variant,
         deliveryMethod: method,
         deliveryLabel: method === 'PICKUP' ? 'KoalaShip Packstation' : method === 'SAFE_PLACE' ? (user.deliveryNote || 'Gewählter Ablageort') : method === 'EXPRESS' ? 'Express-Haustürzustellung' : 'Standard-Haustürzustellung',
-        invoiceNumber: `KS-${new Date(now).getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
+        invoiceNumber: `KS-${new Date(now).getFullYear()}-${randomIntSeeded(100000, 999999, orderPrng)}`,
         lastTrackingUpdate: now,
         carrierId: selectedCarrier.id,
         trackingSteps: [
@@ -651,7 +666,8 @@ export function openPackage(orderId: string) {
     if (order && order.status === 'DELIVERED') {
         if (order.productId === 'p_mystery_gold') {
             const possibleProducts = getProducts().filter(product => product.category !== 'MYSTERY');
-            order.revealedProductId = possibleProducts[Math.floor(Math.random() * possibleProducts.length)]?.id;
+            const orderPrng = createPRNG(getOrderSeed(order.id));
+            order.revealedProductId = pickSeeded(possibleProducts, orderPrng)?.id;
         }
         order.status = 'OPENED';
         const inventoryId = order.revealedProductId || order.productId;
@@ -741,8 +757,9 @@ export function initTicker() {
                     order.deliveryEta += 60 * 60 * 1000;
                     continue;
                 }
+                const orderPrng = createPRNG(getOrderSeed(order.id));
                 order.status = 'OUT_FOR_DELIVERY';
-                order.estimatedStops = 8 + Math.floor(Math.random() * 14);
+                order.estimatedStops = randomIntSeeded(8, 21, orderPrng);
                 order.lastTrackingUpdate = now;
                 order.trackingSteps.push({
                     timestamp: now,
@@ -772,16 +789,16 @@ export function initTicker() {
                 continue;
             }
 
-            const seed = [...order.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-
+            const msPrng = createPRNG(getOrderSeed(order.id) + '_milestones');
+            
             // Deterministic Milestones
             const milestones = [
-                { p: 0.05, msg: ['Auftragsdaten elektronisch übermittelt.', 'Sendung wurde elektronisch angekündigt.'][seed % 2] },
-                { p: 0.15, msg: ['Sendung in der Vorbereitung beim Absender.', 'Paket ist abholbereit für den Transport.'][seed % 2] },
-                { p: 0.25, msg: 'Sendung wurde vom Transporteur entgegengenommen.' },
-                { p: 0.35, msg: ['Label wurde erneut gescannt.', 'Sendung hat das Start-Versandzentrum verlassen.'][seed % 2] },
+                { p: 0.05, msg: pickSeeded(trackingMilestones.received, msPrng) },
+                { p: 0.15, msg: pickSeeded(trackingMilestones.preparation, msPrng) },
+                { p: 0.25, msg: pickSeeded(trackingMilestones.pickup, msPrng) },
+                { p: 0.35, msg: pickSeeded(trackingMilestones.startHub, msPrng) },
                 { p: 0.45, msg: carrier.trackingMilestones.transit },
-                { p: 0.55, msg: ['Zwischenstopp im Verteilnetzwerk passiert.', 'Route für den Weitertransport bestätigt.'][seed % 2] }
+                { p: 0.55, msg: pickSeeded(trackingMilestones.intermediateHub, msPrng) }
             ];
 
             for (const ms of milestones) {
@@ -807,7 +824,7 @@ export function initTicker() {
             // Phase 3: Out for Delivery (80% - 100%)
             else if (order.status === 'OUT_FOR_DELIVERY') {
                 const linearStops = ((1 - progress) / 0.2) * 15;
-                const fluctuation = Math.sin(progress * 50 + seed) * 1.5; 
+                const fluctuation = Math.sin(progress * 50 + getHash(order.id)) * 1.5; 
                 let targetStops = Math.max(0, Math.ceil(linearStops + fluctuation));
 
                 if (order.estimatedStops === undefined) order.estimatedStops = 15;

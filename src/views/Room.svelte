@@ -3,6 +3,7 @@
     getProducts, user, properties, orders, buyProperty, setActiveProperty,
     togglePropertyDecor, toggleFavoriteOrder
   } from '../lib/store.svelte';
+  import { pickRandom, inventoryComments } from '../lib/content';
   import type { InventoryType } from '../lib/types';
 
   let tab = $state<'HOME' | 'ALL' | 'UNOPENED' | 'RECENT' | 'FAVORITES'>('HOME');
@@ -36,7 +37,7 @@
   <header>
     <p class="text-xs font-black uppercase tracking-[.25em] text-indigo-500">Meine Sammlung</p>
     <h2 class="text-3xl font-black text-slate-900 dark:text-white">Immobilien & Kaufhistorie</h2>
-    <p class="text-slate-500">Stelle deine Immobilien zur Schau und verwalte deine gekauften Errungenschaften.</p>
+    <p class="text-slate-500">{pickRandom(inventoryComments)}</p>
   </header>
 
   <nav class="flex gap-2 overflow-x-auto pb-2">

@@ -4,6 +4,8 @@
     getCartTotal, checkoutCart, toggleCompare, createWishlist, deleteWishlist, toggleWishlistItem,
     getPriceHistory, validateDiscountCode
   } from '../lib/store.svelte';
+  import { reviewNames, reviewTitles, reviewTexts, pickDeterministic, productTeasers, cartComments, checkoutConfirmations, wishlistComments, pickRandom } from '../lib/content';
+  import { createPRNG, getProductSeed, randomIntSeeded, pickSeeded } from '../lib/random';
   import type { DeliveryMethod, Product, ProductCategory } from '../lib/types';
   import CoinIcon from '../components/CoinIcon.svelte';
 
@@ -93,10 +95,27 @@
     }
   }
 
+  function getDynamicReviews(product: Product) {
+     const prng = createPRNG(getProductSeed(product.id));
+     const count = randomIntSeeded(3, 6, prng);
+     const dynamicReviews = [];
+     for(let i=0; i<count; i++) {
+        dynamicReviews.push({
+           author: pickSeeded(reviewNames, prng),
+           title: pickSeeded(reviewTitles, prng),
+           text: pickSeeded(reviewTexts, prng),
+           rating: randomIntSeeded(1, 5, prng)
+        });
+     }
+     // Keep original reviews if available, then append dynamic
+     return [...(product.reviews || []), ...dynamicReviews];
+  }
+
   function sortedReviews(product: Product) {
-    if (reviewSort === 'positive') return [...product.reviews].sort((a, b) => b.rating - a.rating);
-    if (reviewSort === 'critical') return [...product.reviews].sort((a, b) => a.rating - b.rating);
-    return product.reviews;
+    const allReviews = getDynamicReviews(product);
+    if (reviewSort === 'positive') return [...allReviews].sort((a, b) => b.rating - a.rating);
+    if (reviewSort === 'critical') return [...allReviews].sort((a, b) => a.rating - b.rating);
+    return allReviews;
   }
 
   function getSubtotal() {
@@ -159,6 +178,7 @@
           <p class="text-xs font-black uppercase tracking-widest text-indigo-500">{product.inventoryType ?? product.category}</p>
           <button onclick={() => openProduct(product)} class="text-left"><h3 class="mt-1 text-lg font-black text-slate-900 dark:text-white">{product.name}</h3></button>
           <p class="mt-2 line-clamp-2 text-sm text-slate-500">{product.description ?? 'Ein bemerkenswertes Produkt aus dem KoalaShip-Sortiment.'}</p>
+          <p class="mt-2 text-xs font-bold text-indigo-400 italic">"{pickDeterministic(productTeasers, product.id)}"</p>
         </div>
         <div class="mt-5 flex items-center justify-between">
           <span class="flex items-center gap-2 text-xl font-black"><CoinIcon class="h-5 w-5" />{getProductPrice(product).toLocaleString('de-DE')}</span>
@@ -278,6 +298,9 @@
                      </div>
                      <div class="text-yellow-500 font-black">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</div>
                   </div>
+                  {#if review.title}
+                     <h4 class="font-bold text-slate-900 dark:text-white mb-1">{review.title}</h4>
+                  {/if}
                   <p class="text-slate-600 dark:text-slate-300 italic">"{review.text}"</p>
                </div>
             {/each}
@@ -301,6 +324,7 @@
             <li><b>Verpackung:</b> {cartPackaging}</li>
             <li><b>Logistik:</b> {cartSplits}</li>
           </ul>
+          <p class="mt-3 text-xs italic text-indigo-500 font-bold">"{pickDeterministic(cartComments, cartCount)}"</p>
         </div>
       {/if}
       <div class="my-6 space-y-3">
@@ -339,7 +363,7 @@
         <div class="text-center py-10">
            <div class="text-7xl mb-4">🎉</div>
            <h3 class="text-2xl font-black text-emerald-600">Erfolgreich simuliert!</h3>
-           <p class="mt-2 text-slate-500">Danke! Wir haben dein fiktives Geld erfolgreich entgegengenommen.</p>
+           <p class="mt-2 text-slate-500">{pickDeterministic(checkoutConfirmations, completedOrders[0]?.id || 'a')}</p>
            
            <div class="mt-6 space-y-3 text-left">
              {#each completedOrders as order}
@@ -375,6 +399,7 @@
         <div>
            <p class="text-sm font-black uppercase tracking-widest text-indigo-500">Träume & Ziele</p>
            <h2 class="text-3xl font-black">Window-Shopping</h2>
+           <p class="mt-1 text-xs italic text-slate-500">"{pickRandom(wishlistComments)}"</p>
         </div>
         <button onclick={() => wishlistsOpen = false} class="h-10 w-10 rounded-full bg-slate-100 text-xl font-bold hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700">✕</button>
       </header>

@@ -46,6 +46,7 @@ export interface UserProfile {
     featuredVehicleId?: string;
     featuredElectronics?: string[];
     messages?: Message[];
+    profileSeed?: number;
 }
 
 export type ProductCategory = 'LUXURY' | 'EVERYDAY' | 'ABSURD' | 'MYSTERY';
@@ -58,7 +59,7 @@ export interface Product {
     category: ProductCategory;
     imageUrl: string;
     rating: number; // e.g. 4.5
-    reviews: { author: string; text: string; rating: number }[];
+    reviews: { author: string; title?: string; text: string; rating: number }[];
     description?: string;
     brand?: string;
     inventoryType?: InventoryType;
