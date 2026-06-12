@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { user, switchMode, resetUser, orders, products, getAchievements, getPlayerLevel, getProductPrice } from '../lib/store.svelte';
+  import { user, switchMode, resetUser, orders, products, getAchievements, getPlayerLevel, getProductPrice, isDeveloperMode, devAdvanceOrders, devDeliverOrders } from '../lib/store.svelte';
   import { navigateTo } from '../lib/router.svelte';
   import { t } from '../lib/i18n.svelte';
   import CoinIcon from '../components/CoinIcon.svelte';
@@ -55,15 +55,18 @@
   let recentOrders = $derived([...orders].reverse().slice(0, 3));
   let achievements = $derived(getAchievements());
   let playerLevel = $derived(getPlayerLevel());
+  const developerMode = isDeveloperMode();
 </script>
 
 <div class="space-y-8">
   <div class="flex items-center justify-between">
     <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{t('nav.dashboard')}</h2>
-    <div class="flex items-center gap-4">
+    {#if developerMode}<div class="flex items-center gap-2">
         <span class="font-bold px-3 py-1 rounded bg-slate-100 dark:bg-slate-800 text-xs shadow-sm border border-slate-200 dark:border-slate-700 {user.mode === 'DEMO' ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}">Modus: {user.mode}</span>
         <button onclick={switchMode} class="text-xs text-slate-500 hover:text-indigo-500 underline transition-colors">Wechseln</button>
-    </div>
+        <button onclick={devAdvanceOrders} class="rounded bg-indigo-100 px-2 py-1 text-xs font-bold text-indigo-700">Zustellung testen</button>
+        <button onclick={devDeliverOrders} class="rounded bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700">Direkt zustellen</button>
+    </div>{/if}
   </div>
 
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">

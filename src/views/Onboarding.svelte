@@ -23,6 +23,11 @@
   let favoriteCategory = $state<'LUXURY' | 'EVERYDAY' | 'ABSURD' | 'MYSTERY'>('EVERYDAY');
   let deliveryNote = $state('');
   let avatarColor = $state('#4f46e5');
+  const randomProfiles = [
+    { name: 'Mika', pronouns: 'keine Angabe', bio: 'Mag Technik, gemütliche Räume und viel zu lange Produktvergleiche.', job: 'Übersetzt Anforderungen in Tabellen, Calls und gelegentlich funktionierenden Code.', note: 'Bitte am gewählten Ablageort abstellen.' },
+    { name: 'Nova', pronouns: 'sie/ihr', bio: 'Baut sich hier das Traum-Setup zusammen, das draußen noch warten muss.', job: 'Plant digitale Kampagnen und nennt spontane Ideen strategische Initiativen.', note: 'Wenn niemand reagiert: bei der simulierten Packstation abgeben.' },
+    { name: 'Robin', pronouns: 'they/them', bio: 'Sammelt schöne Dinge, absurde Technik und Möbel für virtuelle Wohnungen.', job: 'Hält Systeme am Laufen und erklärt nebenbei, warum ein Neustart geholfen hat.', note: 'Klingeln ist optional, Zustellen nicht.' }
+  ];
 
   const languages: { locale: Locale; flag: string; label: string }[] = [
     { locale: 'DE', flag: '🇩🇪', label: 'Deutsch' },
@@ -66,10 +71,37 @@
     });
     navigateTo('DASHBOARD');
   }
+
+  function randomizeProfile() {
+    const profile = randomProfiles[Math.floor(Math.random() * randomProfiles.length)];
+    name = profile.name;
+    pronouns = profile.pronouns;
+    bio = profile.bio;
+    jobDescription = profile.job;
+    deliveryNote = profile.note;
+    selectedJobId = jobPresets[Math.floor(Math.random() * jobPresets.length)].id;
+    const categories = ['LUXURY', 'EVERYDAY', 'ABSURD', 'MYSTERY'] as const;
+    favoriteCategory = categories[Math.floor(Math.random() * categories.length)];
+    const colors = ['#4f46e5', '#0f766e', '#be123c', '#7c3aed', '#c2410c'];
+    avatarColor = colors[Math.floor(Math.random() * colors.length)];
+    const locations = [{ lat: 52.52, lng: 13.405 }, { lat: 53.551, lng: 9.994 }, { lat: 50.111, lng: 8.682 }, { lat: 48.135, lng: 11.582 }];
+    const location = locations[Math.floor(Math.random() * locations.length)];
+    homeLat = location.lat + (Math.random() - .5) * .08;
+    homeLng = location.lng + (Math.random() - .5) * .08;
+    if (map) {
+      const latLng = L.latLng(homeLat, homeLng);
+      if (marker) marker.setLatLng(latLng);
+      else marker = L.marker(latLng).addTo(map);
+      map.setView(latLng, 11);
+    }
+  }
 </script>
 
 <div class="flex flex-col items-center justify-center min-h-screen p-6 relative">
   <div class="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-2xl flex flex-col gap-8">
+    <button onclick={randomizeProfile} class="self-end rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 font-black text-white shadow-lg">
+      Alles zufällig ausfüllen
+    </button>
     <div class="flex flex-wrap justify-center gap-2" aria-label="Sprache auswählen">
       {#each languages as language}
         <button

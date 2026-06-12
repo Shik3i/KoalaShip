@@ -15,6 +15,7 @@
   let currentTileLayer: L.TileLayer | null = null;
   
   let activeOrderCount = $state(0);
+  let deliveryOrders = $derived(orders.filter(order => order.status === 'OUT_FOR_DELIVERY'));
 
   const koalaIcon = L.divIcon({
     className: 'custom-koala-icon',
@@ -211,6 +212,17 @@
         </button>
     {/if}
   </div>
+  {#if deliveryOrders.length}
+    <div class="grid gap-3 sm:grid-cols-2">
+      {#each deliveryOrders as order}
+        <div class="rounded-2xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950">
+          <div class="flex justify-between"><strong>Paket {order.id.split('-')[0]}</strong><span class="font-black text-indigo-600">ca. {order.estimatedStops ?? 12} Stopps</span></div>
+          <p class="mt-1 text-sm">Zeitfenster: {new Date(order.deliveryEta - 30 * 60 * 1000).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}–{new Date(order.deliveryEta + 30 * 60 * 1000).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}</p>
+          <p class="mt-1 text-xs text-slate-500">Letzte Aktualisierung: {new Date(order.lastTrackingUpdate ?? Date.now()).toLocaleTimeString('de-DE')}</p>
+        </div>
+      {/each}
+    </div>
+  {/if}
 
   <div class="flex-1 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-lg relative z-0 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
     

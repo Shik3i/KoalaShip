@@ -1,4 +1,4 @@
-const CACHE = 'koalaship-v0.2.0';
+const CACHE = 'koalaship-v0.4.0';
 const APP_SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/fonts/TwemojiCountryFlags.woff2'];
 
 self.addEventListener('install', event => {

@@ -1,0 +1,102 @@
+[
+  {
+    "id": "cart-science",
+    "category": "research",
+    "text": "Studie bestätigt: Produkte wirken 17 % vernünftiger, sobald sie im Warenkorb liegen.",
+    "weight": 3
+  },
+  {
+    "id": "parcel-window",
+    "category": "delivery",
+    "text": "Paketdienst präzisiert Lieferfenster auf irgendwann zwischen jetzt und später.",
+    "weight": 3
+  },
+  {
+    "id": "free-shipping-math",
+    "category": "commerce",
+    "text": "Kunde spart 4,99 KC Versandkosten durch den Kauf zusätzlicher Produkte für 380 KC.",
+    "weight": 3
+  },
+  {
+    "id": "review-investigation",
+    "category": "reviews",
+    "text": "Ermittlungen laufen: Produkt mit 4,9 Sternen soll laut Ein-Stern-Bewertung völlig unbrauchbar sein.",
+    "weight": 2
+  },
+  {
+    "id": "wishlist-economic-zone",
+    "category": "economy",
+    "text": "Wunschliste nach 46 neuen Einträgen offiziell als eigene Wirtschaftszone anerkannt.",
+    "weight": 2
+  },
+  {
+    "id": "price-history",
+    "category": "prices",
+    "text": "Preis fällt um 3 KC. Marktbeobachter sprechen von einer historischen Kaufgelegenheit.",
+    "weight": 2
+  },
+  {
+    "id": "size-chart",
+    "category": "fashion",
+    "text": "Modebranche veröffentlicht neue Größentabelle mit den Optionen vielleicht, vermutlich und Retour.",
+    "weight": 2
+  },
+  {
+    "id": "warehouse",
+    "category": "delivery",
+    "text": "Paket verlässt Verteilzentrum, betritt kurz darauf ein anderes Verteilzentrum.",
+    "weight": 3
+  },
+  {
+    "id": "comparison-tabs",
+    "category": "research",
+    "text": "Produktvergleich erfolgreich abgeschlossen: Alle 14 geöffneten Tabs bleiben vorsichtshalber offen.",
+    "weight": 3
+  },
+  {
+    "id": "coupon",
+    "category": "commerce",
+    "text": "Rabattcode funktioniert. Käufer investiert Ersparnis unmittelbar in einen weiteren Artikel.",
+    "weight": 2
+  },
+  {
+    "id": "out-for-delivery",
+    "category": "delivery",
+    "text": "Sendung ist in Zustellung. Fensterplätze in der gesamten Region bereits vollständig belegt.",
+    "weight": 4,
+    "requires": "OUT_FOR_DELIVERY"
+  },
+  {
+    "id": "delivered",
+    "category": "delivery",
+    "text": "Eilmeldung: Paket zugestellt. Produktbilder werden nun erstmals in echt überprüft.",
+    "weight": 4,
+    "requires": "DELIVERED"
+  },
+  {
+    "id": "cart-active",
+    "category": "commerce",
+    "text": "Warenkorb besteht darauf, dass Abstellen keine anerkannte Kaufentscheidung ist.",
+    "weight": 4,
+    "requires": "CART"
+  },
+  {
+    "id": "empty-orders",
+    "category": "economy",
+    "text": "Lokale Logistikbranche meldet verdächtig ruhigen Tag und schaut regelmäßig auf den Marktplatz.",
+    "weight": 2,
+    "requires": "NO_ORDERS"
+  },
+  {
+    "id": "inventory",
+    "category": "living",
+    "text": "Innenarchitekturverband bestätigt: Ein Gaming-Stuhl gilt als vollständiges Einrichtungskonzept.",
+    "weight": 2
+  },
+  {
+    "id": "mystery",
+    "category": "commerce",
+    "text": "Mystery Box enthält weiterhin mit hoher Wahrscheinlichkeit irgendeinen Gegenstand.",
+    "weight": 1
+  }
+]

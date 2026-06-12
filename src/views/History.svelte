@@ -10,6 +10,37 @@
   let returnPosition = $state(0);
   let returnDirection = 1;
   let returnTimer: number | null = null;
+  const unboxingSteps = ['Versandlabel prüfen', 'Klebeband lösen', 'Schutzmaterial entfernen'];
+
+  function downloadDocument(orderId: string, type: 'invoice' | 'delivery') {
+    const order = orders.find(item => item.id === orderId);
+    const product = products.find(item => item.id === (order?.revealedProductId || order?.productId));
+    if (!order || !product) return;
+    const title = type === 'invoice' ? 'Rechnung' : 'Lieferschein';
+    const lines = [
+      `KOALASHIP ${title.toUpperCase()}`,
+      `Dokument: ${order.invoiceNumber ?? order.id}`,
+      `Datum: ${new Date(order.orderDate).toLocaleString('de-DE')}`,
+      `Kunde: ${user.name ?? 'KoalaShip Kunde'}`,
+      '',
+      `Produkt: ${product.name}`,
+      `Variante: ${order.variant ?? 'Standard'}`,
+      `Menge: ${order.quantity ?? 1}`,
+      type === 'invoice' ? `Einzelpreis: ${(order.unitPrice ?? product.price).toLocaleString('de-DE')} KC` : '',
+      type === 'invoice' ? `Gesamt: ${(order.totalPrice ?? product.price).toLocaleString('de-DE')} KC` : '',
+      type === 'invoice' && order.discountCode ? `Rabatt: ${order.discountCode} (-${order.discountAmount ?? 0} KC)` : '',
+      `Lieferart: ${order.deliveryMethod ?? (order.isExpress ? 'EXPRESS' : 'STANDARD')}`,
+      `Lieferziel: ${order.deliveryLabel ?? user.deliveryNote ?? 'Simulierter Lieferpunkt'}`,
+      '',
+      'Dies ist ein rein fiktives Dokument. Es fand keine echte Bestellung oder Zahlung statt.'
+    ].filter(Boolean).join('\n');
+    const url = URL.createObjectURL(new Blob([lines], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `KoalaShip-${title}-${order.invoiceNumber ?? order.id}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   function startReturn(orderId: string) {
     returnOrderId = orderId;
@@ -35,7 +66,7 @@
   }
 
   function handleBoxClick() {
-    if (unboxingClicks >= 3) return;
+    if (unboxingClicks >= unboxingSteps.length) return;
     unboxingClicks++;
     
     isShaking = false;
@@ -43,7 +74,7 @@
       isShaking = true;
       setTimeout(() => {
         isShaking = false;
-        if (unboxingClicks === 3 && activeUnboxingOrderId) {
+        if (unboxingClicks === unboxingSteps.length && activeUnboxingOrderId) {
           openPackage(activeUnboxingOrderId);
         }
       }, 300);
@@ -93,6 +124,7 @@
                   {#if order.isExpress}
                     <span class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded font-bold">EXPRESS</span>
                   {/if}
+                  <span>{order.quantity ?? 1}× · {order.variant ?? 'Standard'}</span>
                 </div>
               </div>
             </div>
@@ -109,6 +141,19 @@
               </span>
             </div>
           </div>
+
+          <div class="ml-4 mt-4 flex flex-wrap gap-2">
+            <button onclick={() => downloadDocument(order.id, 'invoice')} class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold dark:border-slate-700 dark:bg-slate-800">Rechnung herunterladen</button>
+            <button onclick={() => downloadDocument(order.id, 'delivery')} class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold dark:border-slate-700 dark:bg-slate-800">Lieferschein herunterladen</button>
+            <span class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500 dark:bg-slate-900">{order.deliveryLabel ?? 'Standardzustellung'}</span>
+          </div>
+          {#if order.status === 'OUT_FOR_DELIVERY'}
+            <div class="ml-4 mt-4 grid gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 p-4 text-indigo-950 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-100 sm:grid-cols-3">
+              <div><small class="font-bold uppercase">Zeitfenster</small><strong class="block">{new Date(order.deliveryEta - 30 * 60 * 1000).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}–{new Date(order.deliveryEta + 30 * 60 * 1000).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}</strong></div>
+              <div><small class="font-bold uppercase">Vor dir</small><strong class="block">ca. {order.estimatedStops ?? 12} Stopps</strong></div>
+              <div><small class="font-bold uppercase">Aktualisiert</small><strong class="block">{new Date(order.lastTrackingUpdate ?? Date.now()).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}</strong></div>
+            </div>
+          {/if}
 
           <!-- Protokoll -->
           <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm space-y-3 border border-slate-100 dark:border-slate-800 shadow-inner ml-4">
@@ -155,10 +200,10 @@
     class="fixed inset-0 z-[100] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl flex flex-col items-center justify-center p-6" 
   >
     
-    {#if unboxingClicks < 3}
+    {#if unboxingClicks < unboxingSteps.length}
       <div class="flex flex-col items-center gap-12">
         <h2 class="text-4xl md:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-widest text-center drop-shadow-md">
-          Zum Öffnen klicken! <br/><span class="text-2xl text-slate-500 mt-4 block">({unboxingClicks}/3 Hits)</span>
+          Paket auspacken <br/><span class="text-2xl text-slate-500 mt-4 block">{unboxingSteps[unboxingClicks]}</span>
         </h2>
         
         <button 
@@ -170,6 +215,7 @@
           <div class="absolute w-16 h-full bg-[#e0b080]/90 left-1/2 -translate-x-1/2 shadow-inner mix-blend-multiply"></div>
           <span class="text-8xl md:text-9xl group-hover:scale-110 transition-transform z-10 drop-shadow-xl">📦</span>
         </button>
+        <div class="flex flex-wrap justify-center gap-2">{#each unboxingSteps as step, index}<span class="rounded-full px-3 py-1 text-xs font-bold {index < unboxingClicks ? 'bg-emerald-100 text-emerald-700' : index === unboxingClicks ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-400'}">{index + 1}. {step}</span>{/each}</div>
       </div>
       
     {:else if activeProduct}
@@ -191,6 +237,7 @@
         <h2 class="text-5xl md:text-7xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-tight">
           {activeProduct.name}
         </h2>
+        <div class="grid w-full gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-left dark:border-slate-700 dark:bg-slate-800 sm:grid-cols-3"><div><small class="font-bold text-slate-500">Variante</small><strong class="block">{activeOrder?.variant ?? 'Standard'}</strong></div><div><small class="font-bold text-slate-500">Lieferumfang</small><strong class="block">Produkt, Zubehör, Unterlagen</strong></div><div><small class="font-bold text-slate-500">Inventar</small><strong class="block">{activeProduct.inventoryType ?? 'Sammlung'}</strong></div></div>
         
         <button 
           onclick={closeUnboxing}

@@ -6,6 +6,7 @@
   import { i18nState, initI18n, setLocale, t } from './lib/i18n.svelte';
   import CoinIcon from './components/CoinIcon.svelte';
   import ToastHost from './components/ToastHost.svelte';
+  import NewsTicker from './components/NewsTicker.svelte';
   import { getSoundEnabled, setSoundEnabled } from './lib/sound';
   
   import Onboarding from './views/Onboarding.svelte';
@@ -41,7 +42,7 @@
     { route: 'DASHBOARD', labelKey: 'nav.dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
     { route: 'SHOP', labelKey: 'nav.shop', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
     { route: 'HISTORY', labelKey: 'nav.history', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
-    { route: 'ROOM', labelKey: 'Zimmer', icon: 'M3 21h18M5 21V9l7-6 7 6v12M9 21v-6h6v6' },
+    { route: 'ROOM', labelKey: 'Inventar', icon: 'M3 21h18M5 21V9l7-6 7 6v12M9 21v-6h6v6' },
     { route: 'MAP', labelKey: 'nav.map', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' }
   ];
 </script>
@@ -144,6 +145,7 @@
         </div>
       </div>
     </header>
+    <NewsTicker />
 
     <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
       {#if routerState.currentRoute === 'DASHBOARD'}
@@ -167,7 +169,7 @@
       <a href="https://github.com/Shik3i/KoalaShip" target="_blank" rel="noopener noreferrer" class="mx-3 inline-flex items-center gap-1 font-bold hover:text-indigo-500">
         <img src="/icons/github.svg" alt="" class="h-4 w-4" />GitHub
       </a>
-      <button onclick={() => navigateTo('CHANGELOG')} class="mx-3 font-bold hover:text-indigo-500">v0.2.0 · Changelog</button>
+      <button onclick={() => navigateTo('CHANGELOG')} class="mx-3 font-bold hover:text-indigo-500">v0.4.0 · Changelog</button>
       <span class="mx-3">KoalaShip · fiktive Shopping-Simulation</span>
     </footer>
 

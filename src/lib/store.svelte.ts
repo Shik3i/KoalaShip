@@ -1,4 +1,4 @@
-import { type UserProfile, type JobPreset as Job, type Product, type Order, type LatLng } from './types';
+import { type UserProfile, type JobPreset as Job, type Product, type Order, type LatLng, type CartItem, type DeliveryMethod, type Property } from './types';
 import { notify } from './notifications.svelte';
 import { playTone } from './sound';
 
@@ -66,7 +66,7 @@ export const user = $state<UserProfile>(loadState('koala_user', {
     homeLocation: null,
     warehouseLocation: null,
     balance: 0,
-    mode: 'DEMO',
+    mode: 'REAL',
     xp: 0,
     wishlist: [],
     roomItems: [],
@@ -83,6 +83,132 @@ user.pronouns ??= '';
 user.favoriteCategory ??= 'EVERYDAY';
 user.deliveryNote ??= '';
 user.avatarColor ??= '#4f46e5';
+user.cart ??= [];
+user.compareIds ??= [];
+user.dreamLists ??= [{ id: 'dream_default', name: 'Meine Traumliste', productIds: [] }];
+user.ownedPropertyIds ??= ['property_studio'];
+user.activePropertyId ??= 'property_studio';
+user.propertyDecor ??= {};
+user.equippedOutfit ??= [];
+user.featuredVehicleId ??= '';
+user.featuredElectronics ??= [];
+
+export const properties: Property[] = [
+    { id: 'property_studio', name: 'Koala-Studio', price: 0, image: '🏠', description: 'Klein, gemütlich und bereits inklusive.', slots: 6, style: 'city' },
+    { id: 'property_loft', name: 'Skyline-Loft', price: 18000, image: '🌆', description: 'Offene Fläche mit großen Fenstern und Platz für Technik.', slots: 10, style: 'loft' },
+    { id: 'property_house', name: 'Eukalyptus-Haus', price: 42000, image: '🏡', description: 'Ein ruhiges Haus mit mehreren Ausstellungsbereichen.', slots: 14, style: 'nature' },
+    { id: 'property_villa', name: 'Koala-Villa', price: 125000, image: '🏛️', description: 'Viel Platz für Luxus, Fahrzeuge und fragwürdige Kunst.', slots: 20, style: 'luxury' }
+];
+
+export function getOwnedProductIds() {
+    return orders
+        .filter(order => order.status === 'OPENED' && !user.returnedOrderIds?.includes(order.id))
+        .flatMap(order => Array(order.quantity ?? 1).fill(order.revealedProductId || order.productId));
+}
+
+export function addToCart(productId: string, variant = 'Standard') {
+    const existing = user.cart!.find(item => item.productId === productId && item.variant === variant);
+    if (existing) existing.quantity++;
+    else user.cart!.push({ id: crypto.randomUUID(), productId, quantity: 1, variant });
+    saveState();
+    notify('Im Warenkorb', products.find(product => product.id === productId)?.name ?? 'Produkt', 'success');
+}
+
+export function updateCartQuantity(itemId: string, quantity: number) {
+    const item = user.cart!.find(entry => entry.id === itemId);
+    if (!item) return;
+    if (quantity <= 0) user.cart = user.cart!.filter(entry => entry.id !== itemId);
+    else item.quantity = Math.min(9, quantity);
+    saveState();
+}
+
+export function clearCart() {
+    user.cart = [];
+    saveState();
+}
+
+export function getCartTotal(deliveryMethod: DeliveryMethod = 'STANDARD') {
+    const shipping = deliveryMethod === 'EXPRESS' ? 50 : deliveryMethod === 'PICKUP' ? 0 : 10;
+    return user.cart!.reduce((sum, item) => {
+        const product = products.find(entry => entry.id === item.productId);
+        return sum + (product ? getProductPrice(product) * item.quantity + shipping : 0);
+    }, 0);
+}
+
+export function toggleCompare(productId: string) {
+    const ids = user.compareIds!;
+    const index = ids.indexOf(productId);
+    if (index >= 0) ids.splice(index, 1);
+    else if (ids.length < 3) ids.push(productId);
+    else notify('Vergleich voll', 'Du kannst bis zu drei Produkte vergleichen.', 'warning');
+    saveState();
+}
+
+export function createDreamList(name: string) {
+    const clean = name.trim();
+    if (!clean) return;
+    user.dreamLists!.push({ id: crypto.randomUUID(), name: clean, productIds: [] });
+    saveState();
+}
+
+export function toggleDreamListProduct(listId: string, productId: string) {
+    const list = user.dreamLists!.find(entry => entry.id === listId);
+    if (!list) return;
+    const index = list.productIds.indexOf(productId);
+    index >= 0 ? list.productIds.splice(index, 1) : list.productIds.push(productId);
+    saveState();
+}
+
+export function buyProperty(propertyId: string) {
+    const property = properties.find(entry => entry.id === propertyId);
+    if (!property || user.ownedPropertyIds!.includes(propertyId)) return false;
+    if (user.balance < property.price) {
+        notify('Noch nicht drin', 'Für diese Immobilie reicht dein Guthaben noch nicht.', 'warning');
+        return false;
+    }
+    user.balance -= property.price;
+    user.ownedPropertyIds!.push(propertyId);
+    user.activePropertyId = propertyId;
+    user.propertyDecor![propertyId] ??= [];
+    saveState();
+    notify('Neue Immobilie', `${property.name} gehört jetzt dir.`, 'success');
+    return true;
+}
+
+export function setActiveProperty(propertyId: string) {
+    if (!user.ownedPropertyIds!.includes(propertyId)) return;
+    user.activePropertyId = propertyId;
+    saveState();
+}
+
+export function togglePropertyDecor(productId: string) {
+    const property = properties.find(entry => entry.id === user.activePropertyId);
+    if (!property) return;
+    const decor = user.propertyDecor![property.id] ??= [];
+    const index = decor.indexOf(productId);
+    if (index >= 0) decor.splice(index, 1);
+    else if (decor.length < property.slots) decor.push(productId);
+    saveState();
+}
+
+export function toggleOutfit(productId: string) {
+    const outfit = user.equippedOutfit!;
+    const index = outfit.indexOf(productId);
+    index >= 0 ? outfit.splice(index, 1) : outfit.length < 4 && outfit.push(productId);
+    saveState();
+}
+
+export function setFeaturedVehicle(productId: string) {
+    user.featuredVehicleId = user.featuredVehicleId === productId ? '' : productId;
+    saveState();
+}
+
+export function toggleFeaturedElectronics(productId: string) {
+    const setup = user.featuredElectronics!;
+    const index = setup.indexOf(productId);
+    index >= 0 ? setup.splice(index, 1) : setup.length < 5 && setup.push(productId);
+    saveState();
+}
 
 export function getPlayerLevel() {
     return Math.floor((user.xp ?? 0) / 100) + 1;
@@ -98,7 +224,27 @@ export function getActiveShopEvent() {
 
 export function getProductPrice(product: Product) {
     const event = getActiveShopEvent();
-    return product.category === event.category ? Math.round(product.price * (1 - event.discount)) : product.price;
+    const day = Math.floor(Date.now() / 86400000);
+    const seed = [...product.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const marketPrice = Math.round(product.price * (1 + Math.sin((day + seed) * 1.73) * 0.045));
+    return product.category === event.category ? Math.round(marketPrice * (1 - event.discount)) : marketPrice;
+}
+
+export function getPriceHistory(product: Product, days = 30) {
+    const today = Math.floor(Date.now() / 86400000);
+    const seed = [...product.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    return Array.from({ length: days }, (_, index) => {
+        const day = today - days + index + 1;
+        return { date: new Date(day * 86400000), price: Math.round(product.price * (1 + Math.sin((day + seed) * 1.73) * 0.045)) };
+    });
+}
+
+export function validateDiscountCode(code: string, subtotal: number) {
+    const normalized = code.trim().toUpperCase();
+    if (normalized === 'WELCOME10' && subtotal >= 500) return { code: normalized, discount: Math.min(250, Math.round(subtotal * .1)), message: '10 % Willkommensrabatt' };
+    if (normalized === 'LEAF50' && subtotal >= 1000) return { code: normalized, discount: 50, message: '50 KC Warenkorbrabatt' };
+    if (normalized === 'FREESHIP' && subtotal >= 250) return { code: normalized, discount: 10, message: 'Standardversand geschenkt' };
+    return null;
 }
 
 export function toggleWishlist(productId: string) {
@@ -141,6 +287,28 @@ export const products = $state<Product[]>([
     { id: 'p_8', name: 'Gaming-Stuhl (RGB)', price: 400, category: 'EVERYDAY', imageUrl: '🪑', rating: 4.6, reviews: [{author: 'GamerGirl', text: 'Leuchtet in 16 Mio Farben.', rating: 5}] },
     { id: 'p_9', name: 'Virtueller NFT Koala', price: 8000, category: 'ABSURD', imageUrl: '🖼️', rating: 1.0, reviews: [{author: 'CryptoBro', text: 'To the moon! (Wert ist auf 0 gefallen)', rating: 1}] }
 ]);
+
+const productDetails: Record<string, Partial<Product>> = {
+    p_1: { brand: 'KoalaTech', inventoryType: 'ELECTRONICS', description: 'Ein großes Premium-Tablet für Streaming, Zeichnen und sehr wichtige Warenkorb-Recherche.', variants: [{ name: 'Farbe', values: ['Space Grau', 'Eukalyptus Grün', 'Polar Weiß'] }], specs: { Display: '13 Zoll OLED', Speicher: '512 GB', Akku: '20 Stunden' }, stock: 12, deliveryDays: 2 },
+    p_2: { brand: 'LeafAudio', inventoryType: 'ELECTRONICS', description: 'Kabellose Kopfhörer mit aktiver Geräuschunterdrückung und Blattgeräusch-Modus.', variants: [{ name: 'Farbe', values: ['Schwarz', 'Creme', 'Grün'] }], specs: { Laufzeit: '38 Stunden', Verbindung: 'Bluetooth', Gewicht: '248 g' }, stock: 31, deliveryDays: 1 },
+    p_3: { brand: 'SoftTime', inventoryType: 'OUTFIT', description: 'Eine luxuriös wirkende Uhr, die hauptsächlich durch Selbstbewusstsein zusammengehalten wird.', variants: [{ name: 'Armband', values: ['Schwarz', 'Gold', 'Neon'] }], specs: { Material: 'Premium-Knetmasse', Wasserfest: 'Nein', Anzeige: 'Fast immer' }, stock: 4, deliveryDays: 3 },
+    p_4: { brand: 'AlpenAtem', inventoryType: 'COLLECTIBLE', description: 'Handverpackte Bergluft für Schreibtisch, Regal oder dramatische Atempausen.', specs: { Herkunft: 'Fiktive Alpen', Inhalt: '400 ml', Haltbarkeit: 'Optimistisch' }, stock: 99, deliveryDays: 2 },
+    p_5: { brand: 'RollGut', inventoryType: 'DECOR', description: 'Unauffällig, zuverlässig und erstaunlich dekorativ in minimalistischen Räumen.', variants: [{ name: 'Packung', values: ['1 Rolle', '8 Rollen', 'Familienpalast'] }], specs: { Lagen: '4', Farbe: 'Weiß', Duft: 'Keiner, zum Glück' }, stock: 250, deliveryDays: 1 },
+    p_6: { brand: 'CyberKoala', inventoryType: 'OUTFIT', description: 'Ein rein kosmetisches Cyber-Accessoire ohne medizinische Funktion.', variants: [{ name: 'Seite', values: ['Links', 'Rechts'] }], specs: { Zustand: 'Defekt', LEDs: '7', Garantie: 'Sehr theoretisch' }, stock: 2, deliveryDays: 5 },
+    p_7: { brand: 'OrbitHome', inventoryType: 'DECOR', description: 'Eine kompakte Raumstation für das sehr große virtuelle Wohnzimmer.', specs: { Umlaufbahn: 'Dekorativ', Zimmer: '12', Aussicht: 'Unbezahlbar' }, stock: 1, deliveryDays: 14 },
+    p_8: { brand: 'SeatRGB', inventoryType: 'DECOR', description: 'Ergonomischer Gaming-Stuhl mit mehr Beleuchtung als manche Innenstädte.', variants: [{ name: 'Farbe', values: ['Schwarz', 'Weiß', 'Lila'] }], specs: { RGB: '16,7 Mio. Farben', Belastung: '150 kg', Komfort: 'Legendär' }, stock: 18, deliveryDays: 2 },
+    p_9: { brand: 'ChainLeaf', inventoryType: 'COLLECTIBLE', description: 'Ein lokal gespeichertes digitales Sammlerstück ohne Blockchain und ohne Spekulation.', specs: { Format: 'PNG-ish', Seltenheit: 'Behauptet', Wiederverkauf: 'Nein' }, stock: 999, deliveryDays: 1 }
+};
+for (const product of products) Object.assign(product, productDetails[product.id] ?? {});
+
+products.push(
+    { id: 'p_10', name: 'Koala Streetwear Hoodie', price: 180, category: 'EVERYDAY', imageUrl: '🧥', rating: 4.7, reviews: [{ author: 'Mira', text: 'Sehr weich und angenehm übertrieben.', rating: 5 }], brand: 'SoftLeaf', inventoryType: 'OUTFIT', description: 'Schwerer Oversize-Hoodie für dein virtuelles Outfit.', variants: [{ name: 'Größe', values: ['S', 'M', 'L', 'XL'] }, { name: 'Farbe', values: ['Flieder', 'Schwarz', 'Grün'] }], specs: { Material: 'Bio-Baumwolle', Schnitt: 'Oversize' }, stock: 44, deliveryDays: 2 },
+    { id: 'p_11', name: 'Eucalyptus Runner', price: 220, category: 'LUXURY', imageUrl: '👟', rating: 4.6, reviews: [{ author: 'SprintKoala', text: 'Sieht schnell aus, reicht mir.', rating: 5 }], brand: 'LeafStep', inventoryType: 'OUTFIT', description: 'Limitierter Sneaker für komplette Koala-Looks.', variants: [{ name: 'Größe', values: ['38', '40', '42', '44'] }], specs: { Sohle: 'Cloud Foam', Edition: '2026' }, stock: 17, deliveryDays: 3 },
+    { id: 'p_12', name: 'Koala GT Electric', price: 68000, category: 'LUXURY', imageUrl: '🏎️', rating: 4.9, reviews: [{ author: 'Volt', text: 'Steht hervorragend in der Garage.', rating: 5 }], brand: 'Koala Motors', inventoryType: 'VEHICLE', description: 'Elektrischer Grand Tourer für die virtuelle Traumgarage.', variants: [{ name: 'Lack', values: ['Midnight', 'Eukalyptus', 'Pearl'] }], specs: { Leistung: '640 PS', Reichweite: '610 km', Sitze: '4' }, stock: 3, deliveryDays: 7 },
+    { id: 'p_13', name: 'City Leaf Scooter', price: 3400, category: 'EVERYDAY', imageUrl: '🛵', rating: 4.4, reviews: [{ author: 'CityKoala', text: 'Perfekt für kurze virtuelle Wege.', rating: 4 }], brand: 'UrbanLeaf', inventoryType: 'VEHICLE', description: 'Leiser Elektro-Scooter für deine Garage.', variants: [{ name: 'Farbe', values: ['Mint', 'Rot', 'Schwarz'] }], specs: { Reichweite: '90 km', Tempo: '80 km/h' }, stock: 9, deliveryDays: 4 },
+    { id: 'p_14', name: 'Creator Workstation Ultra', price: 7900, category: 'LUXURY', imageUrl: '🖥️', rating: 4.8, reviews: [{ author: 'RenderKid', text: 'Rendert meine Wunschliste in 8K.', rating: 5 }], brand: 'KoalaCompute', inventoryType: 'ELECTRONICS', description: 'Eine kompromisslose Workstation für dein Elektronik-Setup.', variants: [{ name: 'RAM', values: ['64 GB', '128 GB', '256 GB'] }], specs: { GPU: 'Leaf RTX 6090', Speicher: '8 TB', Kühlung: 'Flüsterleise' }, stock: 6, deliveryDays: 4 },
+    { id: 'p_15', name: 'Modulares Sofa Cloud', price: 2400, category: 'LUXURY', imageUrl: '🛋️', rating: 4.7, reviews: [{ author: 'HomeKoala', text: 'Mein Loft wirkt direkt teurer.', rating: 5 }], brand: 'Nest', inventoryType: 'DECOR', description: 'Großes modulares Sofa für gekaufte Immobilien.', variants: [{ name: 'Bezug', values: ['Sand', 'Moos', 'Graphit'] }], specs: { Module: '5', Breite: '320 cm' }, stock: 8, deliveryDays: 5 }
+);
 
 products.push({
     id: 'p_mystery_gold',
@@ -216,7 +384,37 @@ export function completeOnboarding(name: string, job: Job, homeLat: number, home
     
     // Starting Capital (5000 KC) as requested
     user.balance = 5000;
+    user.mode = isDeveloperMode() ? user.mode : 'REAL';
     user.lastSalaryPayment = Date.now();
+    saveState();
+}
+
+export function isDeveloperMode() {
+    return typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('dev') === 'true';
+}
+
+export function devAdvanceOrders() {
+    if (!isDeveloperMode()) return;
+    const now = Date.now();
+    for (const order of orders) {
+        if (order.status === 'OPENED') continue;
+        order.orderDate = now - 55_000;
+        order.deliveryEta = now + 5_000;
+        order.status = 'OUT_FOR_DELIVERY';
+        order.trackingSteps.push({ timestamp: now, message: 'Developer-Test: Zustellung beschleunigt.' });
+    }
+    saveState();
+}
+
+export function devDeliverOrders() {
+    if (!isDeveloperMode()) return;
+    const now = Date.now();
+    for (const order of orders) {
+        if (order.status === 'OPENED') continue;
+        order.status = 'DELIVERED';
+        order.deliveryEta = now;
+        order.trackingSteps.push({ timestamp: now, message: 'Developer-Test: Paket zugestellt.' });
+    }
     saveState();
 }
 
@@ -225,11 +423,13 @@ export function switchMode() {
     saveState();
 }
 
-export function purchaseProduct(productId: string, isExpress: boolean = false): boolean {
+export function purchaseProduct(productId: string, isExpress: boolean = false, quantity = 1, variant = 'Standard', deliveryMethod?: DeliveryMethod): boolean {
     const product = products.find(p => p.id === productId);
     if (!product) return false;
     
-    const totalCost = getProductPrice(product) + (isExpress ? 50 : 0);
+    const method = deliveryMethod ?? (isExpress ? 'EXPRESS' : 'STANDARD');
+    const shipping = method === 'EXPRESS' ? 50 : method === 'PICKUP' ? 0 : 10;
+    const totalCost = getProductPrice(product) * quantity + shipping;
     if (user.balance < totalCost) {
         notify('Kauf abgelehnt', 'Dein Guthaben reicht noch nicht. Schulden gibt es hier nicht.', 'warning');
         return false;
@@ -262,6 +462,13 @@ export function purchaseProduct(productId: string, isExpress: boolean = false): 
         deliveryEta: now + delay,
         startLocation: user.warehouseLocation ? { ...user.warehouseLocation } : undefined,
         isExpress,
+        quantity,
+        unitPrice: getProductPrice(product),
+        totalPrice: totalCost,
+        variant,
+        deliveryMethod: method,
+        deliveryLabel: method === 'PICKUP' ? 'KoalaShip Packstation' : method === 'SAFE_PLACE' ? (user.deliveryNote || 'Gewählter Ablageort') : method === 'EXPRESS' ? 'Express-Haustürzustellung' : 'Standard-Haustürzustellung',
+        invoiceNumber: `KS-${new Date(now).getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`,
         trackingSteps: [
             { timestamp: now, message: randomStartMsg }
         ]
@@ -272,6 +479,36 @@ export function purchaseProduct(productId: string, isExpress: boolean = false): 
     saveState();
     notify('Bestellung bestätigt', `${product.name} ist unterwegs.`, 'success');
     playTone('purchase');
+    return true;
+}
+
+export function checkoutCart(deliveryMethod: DeliveryMethod, discountCode = '') {
+    if (!user.cart!.length) return false;
+    const grossTotal = getCartTotal(deliveryMethod);
+    const discount = validateDiscountCode(discountCode, grossTotal);
+    const total = grossTotal - (discount?.discount ?? 0);
+    if (user.balance < total) {
+        notify('Checkout abgelehnt', 'Dein Guthaben reicht nicht. KoalaShip macht keine Schulden.', 'warning');
+        return false;
+    }
+    const items: CartItem[] = [...user.cart!];
+    let remainingDiscount = discount?.discount ?? 0;
+    user.balance += remainingDiscount;
+    for (const item of items) {
+        const success = purchaseProduct(item.productId, deliveryMethod === 'EXPRESS', item.quantity, item.variant, deliveryMethod);
+        if (!success) return false;
+        const order = orders.at(-1);
+        if (order && remainingDiscount > 0) {
+            const applied = Math.min(remainingDiscount, order.totalPrice ?? 0);
+            order.discountCode = discount?.code;
+            order.discountAmount = applied;
+            order.totalPrice = Math.max(0, (order.totalPrice ?? 0) - applied);
+            remainingDiscount -= applied;
+        }
+    }
+    clearCart();
+    notify('Checkout abgeschlossen', `${items.length} Positionen wurden bestellt${discount ? ` · ${discount.message}` : ''}.`, 'success');
+    saveState();
     return true;
 }
 
@@ -286,10 +523,7 @@ export function openPackage(orderId: string) {
         const inventoryId = order.revealedProductId || order.productId;
         if (!user.roomItems!.includes(inventoryId) && user.roomItems!.length < 8) user.roomItems!.push(inventoryId);
         user.xp = (user.xp ?? 0) + 25;
-        order.trackingSteps.push({
-            timestamp: Date.now(),
-            message: '🎁 D O P A M I N E   R E L E A S E D !'
-        });
+        order.trackingSteps.push({ timestamp: Date.now(), message: 'Paket geöffnet, Inhalt geprüft und ins Inventar übernommen.' });
         saveState();
         playTone('reveal');
     }
@@ -308,6 +542,10 @@ export function resetUser() {
 
 export function initTicker() {
     if (typeof window === 'undefined') return;
+    if (!isDeveloperMode() && user.mode !== 'REAL') {
+        user.mode = 'REAL';
+        saveState();
+    }
 
     setInterval(async () => {
         const now = Date.now();
@@ -358,6 +596,8 @@ export function initTicker() {
             if (progress >= 0.8 && order.status !== 'OUT_FOR_DELIVERY') {
                 if (order.mode === 'REAL' && (currentHour < 8 || currentHour >= 18)) continue;
                 order.status = 'OUT_FOR_DELIVERY';
+                order.estimatedStops = 8 + Math.floor(Math.random() * 14);
+                order.lastTrackingUpdate = now;
                 order.trackingSteps.push({
                     timestamp: now,
                     message: 'In Zustellung. Koala-Kurier ist auf der Route.'
@@ -369,12 +609,11 @@ export function initTicker() {
 
             if (progress >= 0.35 && !order.deliveryEvent) {
                 const events = [
-                    'Gratis Express-Upgrade: Der Kurier kennt eine Abkürzung.',
-                    'Eukalyptus-Pause beendet: Das Paket ist wieder unterwegs.',
-                    'Perfektes Wetter: Die Zustellung läuft besonders glatt.'
+                    'Die Sendung wurde im nächsten Umschlagzentrum verarbeitet.',
+                    'Das geplante Transportfahrzeug wurde pünktlich erreicht.',
+                    'Die Route wurde wegen aktueller Verkehrslage leicht angepasst.'
                 ];
                 order.deliveryEvent = events[Math.floor(Math.random() * events.length)];
-                order.deliveryEta -= Math.min(totalTime * 0.08, 60 * 60 * 1000);
                 order.trackingSteps.push({ timestamp: now, message: order.deliveryEvent });
                 notify('Lieferereignis', order.deliveryEvent, 'info');
                 stateChanged = true;
@@ -401,6 +640,8 @@ export function initTicker() {
                         order.deliveryEta += 60 * 60 * 1000;
                     } else {
                         order.status = 'OUT_FOR_DELIVERY';
+                        order.estimatedStops = 8 + Math.floor(Math.random() * 14);
+                        order.lastTrackingUpdate = now;
                         order.trackingSteps.push({
                             timestamp: now,
                             message: 'In Zustellung. Koala-Kurier ist auf der Route.'
@@ -422,6 +663,13 @@ export function initTicker() {
             
             // Phase 3: Out for Delivery (80% - 100%)
             else if (order.status === 'OUT_FOR_DELIVERY') {
+                const stops = Math.max(0, Math.ceil((1 - progress) / .2 * (order.estimatedStops ?? 12)));
+                if (stops !== order.estimatedStops && now - (order.lastTrackingUpdate ?? 0) > 45_000) {
+                    order.estimatedStops = stops;
+                    order.lastTrackingUpdate = now;
+                    order.trackingSteps.push({ timestamp: now, message: stops > 0 ? `Noch ungefähr ${stops} Stopps vor deiner Zustellung.` : 'Der Kurier ist ganz in der Nähe.' });
+                    stateChanged = true;
+                }
                 if (now >= order.deliveryEta) {
                     order.status = 'DELIVERED';
                     order.trackingSteps.push({
