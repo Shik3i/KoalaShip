@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a reproducible problem in KoalaShip
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Do not include real addresses, precise coordinates or other personal data.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: KoalaShip version
+      placeholder: "0.4.0"
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: "Firefox 128 on Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots are useful when they contain no private information.

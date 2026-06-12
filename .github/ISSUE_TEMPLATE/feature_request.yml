@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest a focused improvement to the shopping simulation
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What should improve?
+      description: Explain the shopping, delivery or collection experience that is currently missing.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe how the feature should work from a user's perspective.
+    validations:
+      required: true
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Project principles
+      options:
+        - label: The feature does not introduce debt or real payments.
+          required: true
+        - label: The feature does not depend on fake urgency or manipulative scarcity.
+          required: true
+        - label: The feature supports shopping simulation rather than daily chores.
+          required: true
