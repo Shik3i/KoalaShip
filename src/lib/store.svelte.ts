@@ -46,6 +46,14 @@ export function purchaseProduct(productId: string) {
     // Demo: 30 Sekunden ETA. Real: 2 Tage (Beispiel)
     const delay = isDemo ? 30 * 1000 : 2 * 24 * 60 * 60 * 1000;
 
+    const startMessages = [
+        'Der Koala-Kurier hat dein Paket mit Premium-Blättern poliert.',
+        'Paket wurde im System erfasst – der Hamster im Laufrad gibt alles!',
+        'Ein Eukalyptus-Experte schnürt dein Paket gerade liebevoll zusammen.',
+        'Das Dopamin-Kontingent wurde reserviert. Dein Paket wird verpackt.'
+    ];
+    const randomStartMsg = startMessages[Math.floor(Math.random() * startMessages.length)];
+
     const newOrder: Order = {
         id: crypto.randomUUID(),
         productId,
@@ -54,7 +62,7 @@ export function purchaseProduct(productId: string) {
         mode: user.mode,
         deliveryEta: now + delay,
         trackingSteps: [
-            { timestamp: now, message: 'Paket wird vom Koala-Kurier sorgfältig verpackt. 🐨' }
+            { timestamp: now, message: randomStartMsg }
         ]
     };
 
@@ -143,10 +151,18 @@ export function initTicker() {
                 } else if (order.status === 'PROCESSING') {
                     const totalDuration = order.deliveryEta - order.orderDate;
                     if ((order.deliveryEta - now) < (totalDuration / 2)) {
+                        const shippedMessages = [
+                            "Lieferant Sven ist im Kreis gefahren, aber nun endlich auf dem Weg zu dir.",
+                            "Das Paket hat den Koala-Schrein passiert und nähert sich schnell.",
+                            "Der Kurier hat extra einen Energy-Drink gekippt. Es geht voran!",
+                            "Logistik-Update: Paket fliegt quasi durch die Leitung."
+                        ];
+                        const randomShippedMsg = shippedMessages[Math.floor(Math.random() * shippedMessages.length)];
+                        
                         order.status = 'SHIPPED';
                         order.trackingSteps.push({
                             timestamp: now,
-                            message: "Lieferant Sven ist im Kreis gefahren, aber nun endlich auf dem Weg zu dir."
+                            message: randomShippedMsg
                         });
                         stateChanged = true;
                     }
