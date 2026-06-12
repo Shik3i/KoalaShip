@@ -123,7 +123,7 @@
 <!-- UNBOXING MODAL (Fullscreen) -->
 {#if activeUnboxingOrderId}
   {@const activeOrder = orders.find(o => o.id === activeUnboxingOrderId)}
-  {@const activeProduct = products.find(p => p.id === activeOrder?.productId)}
+  {@const activeProduct = products.find(p => p.id === (activeOrder?.revealedProductId || activeOrder?.productId))}
   
   <div 
     class="fixed inset-0 z-[100] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl flex flex-col items-center justify-center p-6" 
@@ -148,6 +148,11 @@
       
     {:else if activeProduct}
       <div class="flex flex-col items-center gap-8 max-w-3xl text-center w-full">
+        <div class="confetti" aria-hidden="true">
+          {#each Array(36) as _, index}
+            <i style={`--i:${index}`}></i>
+          {/each}
+        </div>
         
         <div class="relative w-64 h-64 md:w-80 md:h-80 rounded-full flex items-center justify-center mb-6">
           <div class="absolute inset-0 bg-gradient-to-tr from-yellow-300 to-yellow-500 rounded-full animate-spin" style="animation-duration: 4s;"></div>

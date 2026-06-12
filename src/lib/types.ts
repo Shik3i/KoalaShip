@@ -27,7 +27,7 @@ export interface UserProfile {
     balance: number;      // Fake-Geld auf dem Konto
 }
 
-export type ProductCategory = 'LUXURY' | 'EVERYDAY' | 'ABSURD';
+export type ProductCategory = 'LUXURY' | 'EVERYDAY' | 'ABSURD' | 'MYSTERY';
 
 export interface Product {
     id: string;
@@ -57,4 +57,5 @@ export interface Order {
     routePolyline?: LatLng[]; // OSRM Route
     isExpress?: boolean;
     trackingSteps: TrackingStep[];
+    revealedProductId?: string;
 }

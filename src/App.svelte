@@ -5,18 +5,22 @@
   import { themeState, initTheme, toggleTheme } from './lib/theme.svelte';
   import { i18nState, initI18n, setLocale, t } from './lib/i18n.svelte';
   import CoinIcon from './components/CoinIcon.svelte';
+  import ToastHost from './components/ToastHost.svelte';
+  import { getSoundEnabled, setSoundEnabled } from './lib/sound';
   
   import Onboarding from './views/Onboarding.svelte';
   import Dashboard from './views/Dashboard.svelte';
   import Shop from './views/Shop.svelte';
   import History from './views/History.svelte';
   import LiveTracking from './views/LiveTracking.svelte';
+  let soundEnabled = $state(true);
 
   onMount(() => {
     initTheme();
     initI18n();
     initTicker();
     initRouter();
+    soundEnabled = getSoundEnabled();
   });
 
   // Force Onboarding if no user data
@@ -54,14 +58,14 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
         
         <!-- Logo -->
-        <div class="flex items-center gap-3 cursor-pointer" onclick={() => navigateTo('SHOP')}>
+        <button class="flex items-center gap-3 cursor-pointer" onclick={() => navigateTo('SHOP')} aria-label="KoalaShip Marktplatz öffnen">
           <div class="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md transform transition hover:rotate-12">
             <span class="text-white text-xl font-bold">K</span>
           </div>
           <span class="text-xl font-black tracking-tight text-slate-900 dark:text-white hidden sm:block">
             KoalaShip
           </span>
-        </div>
+        </button>
         
         <!-- Desktop Nav -->
         <nav class="hidden md:flex items-center gap-1">
@@ -101,6 +105,15 @@
             </div>
 
             <!-- Theme Toggle -->
+            <button
+                onclick={() => { soundEnabled = !soundEnabled; setSoundEnabled(soundEnabled); }}
+                class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 transition-colors"
+                aria-label={soundEnabled ? 'Sounds ausschalten' : 'Sounds einschalten'}
+                title={soundEnabled ? 'Sounds an' : 'Sounds aus'}
+            >
+                {soundEnabled ? '🔊' : '🔇'}
+            </button>
+
             <button 
                 onclick={toggleTheme}
                 class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 transition-colors"
@@ -141,4 +154,5 @@
         {/each}
     </nav>
   {/if}
+  <ToastHost />
 </div>

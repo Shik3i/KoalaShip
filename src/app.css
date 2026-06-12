@@ -10,3 +10,66 @@
     40%, 60% { transform: translate3d(8px, 0, 0) rotate(4deg); }
   }
 }
+
+:where(button, [role="button"], select, input):focus-visible {
+  outline: 3px solid #818cf8;
+  outline-offset: 3px;
+}
+
+button:not(:disabled) {
+  transition: transform 120ms ease, box-shadow 200ms ease, background-color 200ms ease;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.toast-card {
+  animation: toast-in 280ms ease-out both;
+}
+
+.skeleton-card {
+  background-image: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 45%) 40%, transparent 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite linear;
+}
+
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti i {
+  --x: calc((var(--i) * 29) % 100);
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: -10%;
+  width: 10px;
+  height: 18px;
+  background: hsl(calc(var(--i) * 47) 85% 60%);
+  animation: confetti-fall calc(1.8s + (var(--i) % 5) * .25s) ease-in infinite;
+  animation-delay: calc((var(--i) % 9) * -.2s);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-12px) scale(.98); }
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+@keyframes confetti-fall {
+  to { transform: translateY(120vh) rotate(720deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

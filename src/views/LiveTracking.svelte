@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { orders, user } from '../lib/store.svelte';
+  import { orders, user, fetchOsrmRoute } from '../lib/store.svelte';
   import { t } from '../lib/i18n.svelte';
   import { themeState } from '../lib/theme.svelte';
   import L from 'leaflet';
@@ -61,9 +61,18 @@
 
     updateTracking();
     autoFitBounds();
+    loadRoutes();
 
     return () => clearInterval(interval);
   });
+
+  async function loadRoutes() {
+      if (!user.warehouseLocation || !user.homeLocation) return;
+      const activeOrders = orders.filter(order => order.status === 'OUT_FOR_DELIVERY' && !order.routePolyline);
+      if (activeOrders.length === 0) return;
+      const route = await fetchOsrmRoute(user.warehouseLocation, user.homeLocation);
+      if (route) activeOrders.forEach(order => order.routePolyline = route);
+  }
   
   $effect(() => {
       if (themeState.current && map) {

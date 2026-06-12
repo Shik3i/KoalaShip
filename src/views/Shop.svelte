@@ -15,6 +15,20 @@
   
   // State for shaking insufficient funds
   let shakeProductId = $state<string | null>(null);
+  let isLoading = $state(true);
+  let visibleRounds = $state(1);
+
+  setTimeout(() => isLoading = false, 700);
+
+  function handleScroll() {
+      const nearBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
+      if (nearBottom && visibleRounds < 3) visibleRounds++;
+  }
+
+  $effect(() => {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => window.removeEventListener('scroll', handleScroll);
+  });
 
   function handleBuy(productId: string, totalCost: number) {
       if (user.balance < totalCost) {
@@ -61,8 +75,16 @@
     </label>
   </div>
   
+  {#if isLoading}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" aria-label="Produkte werden geladen">
+      {#each Array(8) as _}
+        <div class="skeleton-card h-[28rem] rounded-2xl bg-slate-200 dark:bg-slate-800"></div>
+      {/each}
+    </div>
+  {:else}
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-    {#each products as product}
+    {#each Array(visibleRounds).flatMap((_, round) => products.map(product => ({ product, key: `${round}-${product.id}` }))) as entry (entry.key)}
+      {@const product = entry.product}
       {@const totalCost = product.price + (isExpress ? 50 : 0)}
       {@const canAfford = user.balance >= totalCost}
       {@const isBuying = buyingProductId === product.id}
@@ -71,7 +93,7 @@
         
         <!-- Image Area -->
         <div class="w-full aspect-square bg-slate-50 dark:bg-slate-900 rounded-xl mb-4 flex items-center justify-center text-8xl shadow-inner relative overflow-hidden group-hover:scale-[1.02] transition-transform">
-          <span class="relative z-10 drop-shadow-md">{product.imageUrl}</span>
+          <span class="relative z-10 drop-shadow-md" role="img" aria-label={product.name}>{product.imageUrl}</span>
           <!-- Fake Prime Badge -->
           <div class="absolute top-3 left-3 bg-indigo-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -85,6 +107,7 @@
                 <span class="text-[10px] font-bold tracking-widest text-indigo-600 dark:text-indigo-400 uppercase">{product.category}</span>
                 <button 
                     onclick={() => selectedProduct = product}
+                    aria-label={`Bewertungen für ${product.name} öffnen`}
                     class="flex items-center gap-1 text-xs text-yellow-500 hover:text-yellow-600 transition-colors"
                 >
                     {getStars(product.rating)} <span class="text-slate-500 dark:text-slate-400 underline">({product.reviews.length})</span>
@@ -133,6 +156,10 @@
       </div>
     {/each}
   </div>
+  {#if visibleRounds < 3}
+    <p class="py-8 text-center text-sm font-bold text-slate-500">Mehr Produkte werden beim Scrollen geladen...</p>
+  {/if}
+  {/if}
 </div>
 
 <!-- Reviews Modal -->
@@ -143,7 +170,7 @@
               <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
                   <span>{selectedProduct.imageUrl}</span> {t('shop.reviews')}
               </h3>
-              <button onclick={() => selectedProduct = null} class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+              <button onclick={() => selectedProduct = null} aria-label="Bewertungen schließen" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
           </div>

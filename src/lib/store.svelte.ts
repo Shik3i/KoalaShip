@@ -1,4 +1,8 @@
 import { type UserProfile, type JobPreset as Job, type Product, type Order, type LatLng } from './types';
+import { notify } from './notifications.svelte';
+import { playTone } from './sound';
+
+const MAX_STORED_ORDERS = 50;
 
 function loadState<T>(key: string, fallback: T): T {
     if (typeof window === 'undefined') return fallback;
@@ -9,7 +13,8 @@ function loadState<T>(key: string, fallback: T): T {
 function saveState() {
     if (typeof window === 'undefined') return;
     localStorage.setItem('koala_user', JSON.stringify(user));
-    localStorage.setItem('koala_orders', JSON.stringify(orders));
+    const compactOrders = orders.slice(-MAX_STORED_ORDERS).map(({ routePolyline: _route, ...order }) => order);
+    localStorage.setItem('koala_orders', JSON.stringify(compactOrders));
 }
 
 export const jobPresets: Job[] = [
@@ -42,10 +47,20 @@ export const products = $state<Product[]>([
     { id: 'p_9', name: 'Virtueller NFT Koala', price: 8000, category: 'ABSURD', imageUrl: '🖼️', rating: 1.0, reviews: [{author: 'CryptoBro', text: 'To the moon! (Wert ist auf 0 gefallen)', rating: 1}] }
 ]);
 
+products.push({
+    id: 'p_mystery_gold',
+    name: 'Gold Mystery Box',
+    price: 750,
+    category: 'MYSTERY',
+    imageUrl: '🎁',
+    rating: 4.9,
+    reviews: [{ author: 'LuckyLeaf', text: 'Die Spannung war fast besser als der Inhalt.', rating: 5 }]
+});
+
 export const orders = $state<Order[]>(loadState('koala_orders', []));
 
 // OSRM Fetcher
-async function fetchOsrmRoute(start: LatLng, end: LatLng): Promise<LatLng[] | null> {
+export async function fetchOsrmRoute(start: LatLng, end: LatLng): Promise<LatLng[] | null> {
     try {
         const url = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
         const response = await fetch(url);
@@ -88,12 +103,15 @@ export function switchMode() {
     saveState();
 }
 
-export function purchaseProduct(productId: string, isExpress: boolean = false) {
+export function purchaseProduct(productId: string, isExpress: boolean = false): boolean {
     const product = products.find(p => p.id === productId);
-    if (!product) return console.error('Produkt nicht gefunden');
+    if (!product) return false;
     
     const totalCost = product.price + (isExpress ? 50 : 0);
-    if (user.balance < totalCost) return console.warn('Nicht genug KoalaCoins!');
+    if (user.balance < totalCost) {
+        notify('Kauf abgelehnt', 'Dein Guthaben reicht noch nicht. Schulden gibt es hier nicht.', 'warning');
+        return false;
+    }
 
     user.balance -= totalCost;
 
@@ -127,18 +145,27 @@ export function purchaseProduct(productId: string, isExpress: boolean = false) {
     };
 
     orders.push(newOrder);
+    if (orders.length > MAX_STORED_ORDERS) orders.splice(0, orders.length - MAX_STORED_ORDERS);
     saveState();
+    notify('Bestellung bestätigt', `${product.name} ist unterwegs.`, 'success');
+    playTone('purchase');
+    return true;
 }
 
 export function openPackage(orderId: string) {
     const order = orders.find(o => o.id === orderId);
     if (order && order.status === 'DELIVERED') {
+        if (order.productId === 'p_mystery_gold') {
+            const possibleProducts = products.filter(product => product.category !== 'MYSTERY');
+            order.revealedProductId = possibleProducts[Math.floor(Math.random() * possibleProducts.length)]?.id;
+        }
         order.status = 'OPENED';
         order.trackingSteps.push({
             timestamp: Date.now(),
             message: '🎁 D O P A M I N E   R E L E A S E D !'
         });
         saveState();
+        playTone('reveal');
     }
 }
 
@@ -169,10 +196,14 @@ export function initTicker() {
                 intervalMs = isDemo ? 4 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000;
             }
 
-            if (now - user.lastSalaryPayment >= intervalMs) {
-                user.balance += user.occupation.salary;
-                user.lastSalaryPayment = now;
+            const missedPayments = Math.floor((now - user.lastSalaryPayment) / intervalMs);
+            if (missedPayments > 0) {
+                const salaryTotal = user.occupation.salary * missedPayments;
+                user.balance += salaryTotal;
+                user.lastSalaryPayment += intervalMs * missedPayments;
                 saveState();
+                notify('Gehalt angekommen!', `+${salaryTotal.toLocaleString('de-DE')} KC`, 'success');
+                playTone('salary');
             }
         }
 
@@ -186,6 +217,29 @@ export function initTicker() {
             const totalTime = order.deliveryEta - order.orderDate;
             const elapsed = now - order.orderDate;
             const progress = Math.max(0, Math.min(1, elapsed / totalTime));
+
+            if (progress >= 1) {
+                order.status = 'DELIVERED';
+                order.trackingSteps.push({
+                    timestamp: now,
+                    message: 'Erfolgreich zugestellt! Bereit zum Unboxing.'
+                });
+                notify('Paket zugestellt!', products.find(product => product.id === order.productId)?.name ?? 'Dein Paket ist da.', 'success');
+                stateChanged = true;
+                continue;
+            }
+
+            if (progress >= 0.8 && order.status !== 'OUT_FOR_DELIVERY') {
+                if (order.mode === 'REAL' && (currentHour < 8 || currentHour >= 18)) continue;
+                order.status = 'OUT_FOR_DELIVERY';
+                order.trackingSteps.push({
+                    timestamp: now,
+                    message: 'In Zustellung. Koala-Kurier ist auf der Route.'
+                });
+                notify('Nur noch wenige Stopps', 'Dein Paket ist jetzt in Zustellung.', 'info');
+                stateChanged = true;
+                continue;
+            }
 
             // Phase 1: Transit (0% - 60%)
             if (order.status === 'TRANSIT') {

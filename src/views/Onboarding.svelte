@@ -62,8 +62,9 @@
     </div>
 
     <div class="space-y-3">
-      <label class="text-slate-700 dark:text-slate-300 font-bold text-sm">Vorname / Alias</label>
+      <label for="profile-name" class="text-slate-700 dark:text-slate-300 font-bold text-sm">Vorname / Alias</label>
       <input 
+        id="profile-name"
         type="text" 
         bind:value={name} 
         placeholder="z.B. Max Mustermann"
@@ -72,8 +73,8 @@
     </div>
 
     <div class="space-y-3">
-      <label class="text-slate-700 dark:text-slate-300 font-bold text-sm">Berufs-Profil (Einkommen)</label>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="text-slate-700 dark:text-slate-300 font-bold text-sm" id="job-label">Berufs-Profil (Einkommen)</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" role="group" aria-labelledby="job-label">
         {#each jobPresets as preset}
           <label class="cursor-pointer group">
             <input type="radio" name="job" value={preset.id} bind:group={selectedJobId} class="hidden peer" />
@@ -90,8 +91,8 @@
     </div>
 
     <div class="space-y-3">
-      <label class="text-slate-700 dark:text-slate-300 font-bold text-sm">Lieferadresse markieren (Klick auf Karte)</label>
-      <div bind:this={mapContainer} class="w-full h-64 rounded-xl border-2 border-slate-200 dark:border-slate-700 z-0 overflow-hidden shadow-inner"></div>
+      <div class="text-slate-700 dark:text-slate-300 font-bold text-sm" id="map-label">Lieferadresse markieren (Klick auf Karte)</div>
+      <div bind:this={mapContainer} role="application" aria-labelledby="map-label" class="w-full h-64 rounded-xl border-2 border-slate-200 dark:border-slate-700 z-0 overflow-hidden shadow-inner"></div>
       {#if !homeLat}
         <p class="text-red-500 text-xs font-medium">Bitte eine Lieferadresse auf der Karte markieren.</p>
       {/if}
