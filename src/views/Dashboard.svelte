@@ -1,22 +1,22 @@
 <script lang="ts">
-  import { user, switchMode, resetUser } from '../lib/store.svelte';
+  import { user, switchMode, resetUser, orders, products } from '../lib/store.svelte';
   import { navigateTo } from '../lib/router.svelte';
   import { t } from '../lib/i18n.svelte';
   import CoinIcon from '../components/CoinIcon.svelte';
   
   function formatTimeRemaining(ms: number) {
-    if (ms <= 0) return '0s';
-    const s = Math.floor(ms / 1000) % 60;
-    const m = Math.floor(ms / 1000 / 60) % 60;
-    const h = Math.floor(ms / 1000 / 60 / 60) % 24;
+    if (ms <= 0) return 'Jetzt';
     const d = Math.floor(ms / 1000 / 60 / 60 / 24);
+    if (d > 0) return `${d} Tag${d > 1 ? 'en' : ''}`;
     
-    let parts = [];
-    if (d > 0) parts.push(`${d}d`);
-    if (h > 0) parts.push(`${h}h`);
-    if (m > 0) parts.push(`${m}m`);
-    if (s > 0 || parts.length === 0) parts.push(`${s}s`);
-    return parts.join(' ');
+    const h = Math.floor(ms / 1000 / 60 / 60) % 24;
+    if (h > 0) return `${h} Stunde${h > 1 ? 'n' : ''}`;
+
+    const m = Math.floor(ms / 1000 / 60) % 60;
+    if (m > 0) return `${m} Min`;
+    
+    const s = Math.floor(ms / 1000) % 60;
+    return `${s} Sek`;
   }
   
   let nextSalaryRemaining = $state(0);
@@ -51,72 +51,115 @@
         navigateTo('ONBOARDING');
     }
   }
+
+  let recentOrders = $derived([...orders].reverse().slice(0, 3));
 </script>
 
-<div class="space-y-6">
-  <div class="flex items-center justify-between mb-8">
+<div class="space-y-8">
+  <div class="flex items-center justify-between">
     <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{t('nav.dashboard')}</h2>
+    <div class="flex items-center gap-4">
+        <span class="font-bold px-3 py-1 rounded bg-slate-100 dark:bg-slate-800 text-xs shadow-sm border border-slate-200 dark:border-slate-700 {user.mode === 'DEMO' ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}">Modus: {user.mode}</span>
+        <button onclick={switchMode} class="text-xs text-slate-500 hover:text-indigo-500 underline transition-colors">Wechseln</button>
+    </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <!-- User Card -->
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-6 relative overflow-hidden">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Main Wallet Card -->
+    <div class="lg:col-span-2 bg-gradient-to-br from-indigo-600 to-purple-600 dark:from-indigo-900 dark:to-purple-900 rounded-3xl p-8 shadow-lg flex flex-col justify-between relative overflow-hidden text-white border border-indigo-500/30">
         <!-- Decoration -->
-        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-bl-full -z-0"></div>
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="relative z-10 flex justify-between items-start">
+        <div class="relative z-10 flex justify-between items-start mb-12">
             <div class="flex flex-col gap-1">
-                <span class="text-indigo-600 dark:text-indigo-400 font-bold text-xs tracking-widest uppercase">Profil</span>
-                <span class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{user.name || 'Unbekannt'}</span>
-                <span class="text-slate-500 dark:text-slate-400 font-medium">{user.occupation?.title || 'Arbeitslos'}</span>
+                <span class="text-indigo-200 font-bold text-sm tracking-widest uppercase">Karteninhaber</span>
+                <span class="text-3xl font-black tracking-tight">{user.name || 'Unbekannt'}</span>
+                <span class="text-indigo-100 font-medium">{user.occupation?.title || 'Arbeitslos'}</span>
             </div>
             
-            <button onclick={handleReset} class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors px-2 py-1 bg-slate-50 dark:bg-slate-900 rounded-md">
-                RESET
+            <button onclick={handleReset} class="text-xs font-bold text-indigo-200 hover:text-red-400 transition-colors px-3 py-1.5 bg-black/20 hover:bg-black/40 rounded-lg backdrop-blur-sm">
+                RESET ACCOUNT
             </button>
         </div>
 
-        <div class="relative z-10 flex flex-col gap-2 mt-4">
-          <span class="text-slate-500 dark:text-slate-400 font-bold text-sm tracking-widest uppercase">{t('dashboard.balance')}</span>
-          <div class="flex items-center gap-3">
-              <CoinIcon class="w-10 h-10" />
-              <div class="text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+        <div class="relative z-10 flex flex-col gap-2">
+          <span class="text-indigo-200 font-bold text-sm tracking-widest uppercase">Verfügbares Guthaben</span>
+          <div class="flex items-end gap-4">
+              <CoinIcon class="w-12 h-12 grayscale brightness-200 shadow-sm rounded-full" />
+              <div class="text-6xl md:text-7xl font-black tracking-tighter leading-none">
                 {Math.floor(user.balance).toLocaleString('de-DE')}
               </div>
           </div>
-        </div>
-
-        <!-- Mode Toggles -->
-        <div class="relative z-10 flex flex-col gap-1 mt-auto border-t border-slate-100 dark:border-slate-700 pt-6">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase">Simulationsmodus</span>
-                <span class="font-black px-2 py-1 rounded bg-slate-100 dark:bg-slate-900 text-xs {user.mode === 'DEMO' ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}">{user.mode}</span>
-            </div>
-            <button onclick={switchMode} class="w-full py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-bold transition-all shadow-sm text-slate-700 dark:text-slate-300">
-                Modus wechseln
-            </button>
+          
+          <div class="mt-4 inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 w-fit">
+              <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+              <span class="font-bold text-emerald-400">+{user.occupation?.salary?.toLocaleString('de-DE') || 0} KC</span>
+              <span class="text-indigo-200 text-sm">(Eingang in: {formatTimeRemaining(nextSalaryRemaining)})</span>
+          </div>
         </div>
     </div>
 
-    <!-- Income Tracker -->
-    <div class="bg-gradient-to-br from-indigo-600 to-purple-600 dark:from-indigo-900 dark:to-purple-900 rounded-2xl p-8 shadow-md flex flex-col gap-6 relative overflow-hidden text-white">
-        <!-- Decoration -->
-        <div class="absolute -bottom-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div class="relative z-10 flex flex-col gap-2 h-full justify-center">
-            <span class="text-indigo-200 font-bold text-sm tracking-widest uppercase">{t('dashboard.next_salary')}</span>
-            <div class="text-5xl md:text-6xl font-black mt-2 tracking-tight">
-                {formatTimeRemaining(nextSalaryRemaining)}
+    <!-- Quick Stats & Actions -->
+    <div class="flex flex-col gap-6">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex-1 flex flex-col justify-center items-center text-center gap-2">
+            <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center text-2xl mb-2">
+                📦
             </div>
+            <span class="text-4xl font-black text-slate-900 dark:text-white">{orders.length}</span>
+            <span class="text-slate-500 font-bold text-sm uppercase">Total Orders</span>
         </div>
 
-        <div class="relative z-10 flex flex-col gap-1 bg-white/10 backdrop-blur-sm rounded-xl p-4 mt-auto border border-white/20">
-            <span class="text-indigo-200 font-bold text-xs uppercase">Erwarteter Eingang</span>
-            <div class="flex items-center gap-2">
-                <CoinIcon class="w-6 h-6 grayscale brightness-200" />
-                <span class="text-3xl font-black">+{user.occupation?.salary?.toLocaleString('de-DE') || 0}</span>
+        <button 
+            onclick={() => navigateTo('SHOP')}
+            class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between group transition-all"
+        >
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                    🛒
+                </div>
+                <span class="font-bold text-slate-900 dark:text-white text-lg">Zum Shop</span>
             </div>
-        </div>
+            <svg class="w-6 h-6 text-slate-400 group-hover:text-indigo-500 transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
     </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-200 dark:border-slate-700">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white">Letzte Aktivitäten</h3>
+        {#if orders.length > 0}
+            <button onclick={() => navigateTo('HISTORY')} class="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:underline">Alle anzeigen</button>
+        {/if}
+    </div>
+
+    {#if orders.length === 0}
+        <div class="text-center py-8">
+            <span class="text-4xl opacity-50 mb-4 block">🏜️</span>
+            <p class="text-slate-500">Noch keine Bestellungen getätigt.</p>
+        </div>
+    {:else}
+        <div class="space-y-4">
+            {#each recentOrders as order}
+                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center gap-4">
+                        <div class="text-3xl">{products.find(p => p.id === order.productId)?.imageUrl}</div>
+                        <div>
+                            <p class="font-bold text-slate-900 dark:text-white">{products.find(p => p.id === order.productId)?.name}</p>
+                            <p class="text-xs text-slate-500">{new Date(order.orderDate).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-md
+                        {order.status === 'PROCESSING' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30' : ''}
+                        {order.status === 'SHIPPED' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30' : ''}
+                        {order.status === 'DELIVERED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30' : ''}
+                        {order.status === 'OPENED' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : ''}
+                    ">
+                        {order.status}
+                    </span>
+                </div>
+            {/each}
+        </div>
+    {/if}
   </div>
 </div>
