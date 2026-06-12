@@ -11,9 +11,9 @@ export const user = $state<UserProfile>({
 });
 
 export const products = $state<Product[]>([
-    { id: 'p_1', name: 'Rolex aus Knetmasse', price: 5000, category: 'LUXURY', imageUrl: 'https://placehold.co/100x100/FFD700/FFFFFF?text=Rolex' },
-    { id: 'p_2', name: 'Eine Dose frische Luft', price: 50, category: 'ABSURD', imageUrl: 'https://placehold.co/100x100/87CEEB/FFFFFF?text=Luft' },
-    { id: 'p_3', name: 'Standard-Toilettenpapier', price: 5, category: 'EVERYDAY', imageUrl: 'https://placehold.co/100x100/FFFFFF/000000?text=TP' }
+    { id: 'p_1', name: 'Rolex aus Knetmasse', price: 5000, category: 'LUXURY', imageUrl: '⌚' },
+    { id: 'p_2', name: 'Eine Dose frische Luft', price: 50, category: 'ABSURD', imageUrl: '💨' },
+    { id: 'p_3', name: 'Standard-Toilettenpapier', price: 5, category: 'EVERYDAY', imageUrl: '🧻' }
 ]);
 
 export const orders = $state<Order[]>([]);
