@@ -53,8 +53,9 @@
         ">
           <!-- Status Indicator Line -->
           <div class="absolute left-0 top-0 bottom-0 w-1.5
-            {order.status === 'PROCESSING' ? 'bg-orange-500' : ''}
-            {order.status === 'SHIPPED' ? 'bg-indigo-500' : ''}
+            {order.status === 'TRANSIT' ? 'bg-slate-400' : ''}
+            {order.status === 'LOCAL_SORTING' ? 'bg-orange-500' : ''}
+            {order.status === 'OUT_FOR_DELIVERY' ? 'bg-indigo-500' : ''}
             {order.status === 'DELIVERED' ? 'bg-yellow-400' : ''}
             {order.status === 'OPENED' ? 'bg-emerald-500' : ''}
           "></div>
@@ -77,8 +78,9 @@
             
             <div class="flex items-center gap-3">
               <span class="font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-lg
-                {order.status === 'PROCESSING' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : ''}
-                {order.status === 'SHIPPED' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : ''}
+                {order.status === 'TRANSIT' ? 'bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400' : ''}
+                {order.status === 'LOCAL_SORTING' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : ''}
+                {order.status === 'OUT_FOR_DELIVERY' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : ''}
                 {order.status === 'DELIVERED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : ''}
                 {order.status === 'OPENED' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}
               ">
@@ -91,8 +93,13 @@
           <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm space-y-3 border border-slate-100 dark:border-slate-800 shadow-inner ml-4">
             {#each order.trackingSteps as step}
               <div class="flex gap-4 items-start">
-                <span class="text-indigo-500 dark:text-indigo-400 shrink-0 font-mono font-bold text-xs opacity-70">[{new Date(step.timestamp).toLocaleTimeString()}]</span>
-                <span class="text-slate-700 dark:text-slate-300 font-medium {step.message.includes('DOPAMINE') ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}">
+                <span 
+                    class="text-indigo-500 dark:text-indigo-400 shrink-0 font-mono font-bold text-xs opacity-70 cursor-help"
+                    title={new Date(step.timestamp).toLocaleString('de-DE')}
+                >
+                    [{new Date(step.timestamp).toLocaleTimeString()}]
+                </span>
+                <span class="text-slate-700 dark:text-slate-300 font-medium {step.message.includes('DOPAMIN') ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}">
                   {step.message}
                 </span>
               </div>

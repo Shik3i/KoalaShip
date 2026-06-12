@@ -146,12 +146,18 @@
                         <div class="text-3xl">{products.find(p => p.id === order.productId)?.imageUrl}</div>
                         <div>
                             <p class="font-bold text-slate-900 dark:text-white">{products.find(p => p.id === order.productId)?.name}</p>
-                            <p class="text-xs text-slate-500">{new Date(order.orderDate).toLocaleDateString()}</p>
+                            <p 
+                                class="text-xs text-slate-500 cursor-help"
+                                title={new Date(order.orderDate).toLocaleString('de-DE')}
+                            >
+                                {new Date(order.orderDate).toLocaleDateString()}
+                            </p>
                         </div>
                     </div>
                     <span class="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-md
-                        {order.status === 'PROCESSING' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30' : ''}
-                        {order.status === 'SHIPPED' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30' : ''}
+                        {order.status === 'TRANSIT' ? 'bg-slate-100 text-slate-600 dark:bg-slate-900/30' : ''}
+                        {order.status === 'LOCAL_SORTING' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30' : ''}
+                        {order.status === 'OUT_FOR_DELIVERY' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30' : ''}
                         {order.status === 'DELIVERED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30' : ''}
                         {order.status === 'OPENED' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : ''}
                     ">

@@ -25,7 +25,6 @@ export interface UserProfile {
     // Legacy Fields
     mode: GameMode;
     balance: number;      // Fake-Geld auf dem Konto
-    incomeRate: number;   // Deprecated, keep for compat or remove? Let's remove and use occupation.
 }
 
 export type ProductCategory = 'LUXURY' | 'EVERYDAY' | 'ABSURD';
@@ -40,7 +39,7 @@ export interface Product {
     reviews: { author: string; text: string; rating: number }[];
 }
 
-export type OrderStatus = 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'OPENED';
+export type OrderStatus = 'TRANSIT' | 'LOCAL_SORTING' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'OPENED';
 
 export interface TrackingStep {
     timestamp: number;
@@ -55,6 +54,7 @@ export interface Order {
     mode: GameMode;    
     deliveryEta: number; // ETA als Unix Timestamp
     startLocation?: LatLng; // Map-Tracking
+    routePolyline?: LatLng[]; // OSRM Route
     isExpress?: boolean;
     trackingSteps: TrackingStep[];
 }

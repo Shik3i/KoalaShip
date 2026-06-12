@@ -12,8 +12,17 @@
 
   // State for Reviews Modal
   let selectedProduct = $state<typeof products[0] | null>(null);
+  
+  // State for shaking insufficient funds
+  let shakeProductId = $state<string | null>(null);
 
-  function handleBuy(productId: string) {
+  function handleBuy(productId: string, totalCost: number) {
+      if (user.balance < totalCost) {
+          shakeProductId = productId;
+          setTimeout(() => shakeProductId = null, 500);
+          return;
+      }
+      
       buyingProductId = productId;
       buyStatus = 'authorizing';
       
@@ -111,14 +120,13 @@
                 {/if}
             {:else}
                 <button 
-                    onclick={() => handleBuy(product.id)}
-                    disabled={!canAfford}
+                    onclick={() => handleBuy(product.id, totalCost)}
                     class="w-full py-3 rounded-xl font-bold transition-all duration-200 shadow-sm
-                        {canAfford 
-                            ? 'bg-yellow-400 hover:bg-yellow-500 text-slate-900 hover:shadow-md active:scale-95' 
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'}"
+                        {shakeProductId === product.id ? 'bg-red-500 text-white animate-[shake_0.4s_cubic-bezier(.36,.07,.19,.97)_both]' : ''}
+                        {shakeProductId !== product.id && canAfford ? 'bg-yellow-400 hover:bg-yellow-500 text-slate-900 hover:shadow-md active:scale-95' : ''}
+                        {shakeProductId !== product.id && !canAfford ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700' : ''}"
                 >
-                    {canAfford ? t('shop.buy') : t('shop.outofstock')}
+                    {shakeProductId === product.id ? 'Zu teuer!' : (canAfford ? t('shop.buy') : t('shop.outofstock'))}
                 </button>
             {/if}
         </div>

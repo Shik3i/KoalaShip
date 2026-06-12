@@ -9,8 +9,8 @@
 
   let name = $state('');
   let selectedJobId = $state(jobPresets[0].id);
-  let mapContainer: HTMLElement;
-  let map: L.Map;
+  let mapContainer: HTMLElement | undefined = $state();
+  let map: L.Map | undefined;
   let marker: L.Marker | null = null;
   let homeLat = $state<number | null>(null);
   let homeLng = $state<number | null>(null);
@@ -24,7 +24,7 @@
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
     });
 
-    map = L.map(mapContainer).setView([51.165691, 10.451526], 6); // default germany
+    map = L.map(mapContainer as HTMLElement).setView([51.165691, 10.451526], 6); // default germany
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap'
@@ -33,7 +33,7 @@
     map.on('click', (e: L.LeafletMouseEvent) => {
       if (marker) {
         marker.setLatLng(e.latlng);
-      } else {
+      } else if (map) {
         marker = L.marker(e.latlng).addTo(map);
       }
       homeLat = e.latlng.lat;
