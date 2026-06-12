@@ -13,43 +13,82 @@
   }
 </script>
 
-<div class="app-container">
-  <header>
-    <div class="header-content">
-      <h1>🐨 KoalaShip</h1>
-      <a href="https://github.com/Shik3i/KoalaShip.git" target="_blank" rel="noopener noreferrer" class="github-link">
-        <img src="/icons/github.svg" alt="GitHub Repo" width="24" height="24" />
+<div class="min-h-screen flex flex-col bg-slate-950 text-slate-300 selection:bg-neon-purple selection:text-white">
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-neon-purple/30 sticky top-0 z-50 shadow-[0_0_15px_rgba(176,38,255,0.15)]">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-green tracking-wider uppercase flex items-center gap-2 drop-shadow-[0_0_8px_rgba(176,38,255,0.3)]">
+        <span class="text-3xl">🐨</span> KoalaShip
+      </h1>
+      <a href="https://github.com/Shik3i/KoalaShip.git" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-neon-green transition-colors duration-300">
+        <img src="/icons/github.svg" alt="GitHub Repo" class="w-7 h-7 filter hover:drop-shadow-[0_0_8px_rgba(57,255,20,0.6)] transition-all" />
       </a>
     </div>
   </header>
 
-  <main>
-    <section class="dashboard">
-      <div class="card">
-        <h2>Profil</h2>
-        <p><strong>Modus:</strong> {user.mode}</p>
-        <p><strong>Kontostand:</strong> {user.balance} DC (Dopamin-Coins)</p>
-        <div class="actions">
-          <button onclick={switchMode}>Modus wechseln</button>
-          <button onclick={() => addFunds(1000)}>+1000 DC generieren</button>
+  <main class="flex-1 w-full max-w-5xl mx-auto p-6 flex flex-col gap-10">
+    
+    <!-- Dashboard / Profile -->
+    <section class="space-y-4">
+      <h2 class="text-xl font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Terminal / Profil</h2>
+      <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-6 shadow-2xl backdrop-blur-sm relative overflow-hidden group">
+        <!-- Decorative neon line -->
+        <div class="absolute top-0 left-0 w-1 h-full bg-neon-green/70 shadow-[0_0_10px_#39ff14] group-hover:bg-neon-purple transition-colors duration-500"></div>
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div class="space-y-2 font-mono">
+            <p class="text-slate-400 text-sm">System-Modus</p>
+            <p class="text-lg font-bold {user.mode === 'DEMO' ? 'text-neon-purple' : 'text-cyber-gold'}">[{user.mode}]</p>
+          </div>
+          
+          <div class="space-y-2 font-mono">
+            <p class="text-slate-400 text-sm">Liquidität</p>
+            <p class="text-3xl font-bold text-neon-green drop-shadow-[0_0_5px_rgba(57,255,20,0.3)]">
+              {user.balance.toLocaleString('de-DE')} <span class="text-sm text-slate-500">DC</span>
+            </p>
+          </div>
+
+          <div class="flex gap-4">
+            <button 
+              onclick={switchMode} 
+              class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 rounded-md uppercase text-xs font-bold tracking-wider transition-all hover:border-neon-purple hover:shadow-[0_0_10px_rgba(176,38,255,0.2)]">
+              Toggle Modus
+            </button>
+            <button 
+              onclick={() => addFunds(1000)} 
+              class="px-5 py-2.5 bg-neon-purple/10 hover:bg-neon-purple/20 text-neon-purple border border-neon-purple/50 rounded-md uppercase text-xs font-bold tracking-wider transition-all shadow-[0_0_10px_rgba(176,38,255,0.1)] hover:shadow-[0_0_15px_rgba(176,38,255,0.4)]">
+              Inject Funds (+1k)
+            </button>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="shop">
-      <h2>Dopamin-Shop</h2>
-      <div class="product-grid">
+    <!-- Shop -->
+    <section class="space-y-4">
+      <h2 class="text-xl font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Darknet Market</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {#each products as product}
-          <div class="product-card">
-            <img src={product.imageUrl} alt={product.name} />
-            <div class="product-info">
-              <h3>{product.name}</h3>
-              <p class="price">{product.price} DC</p>
+          <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col hover:border-neon-purple/50 transition-all duration-300 group shadow-lg hover:shadow-[0_0_20px_rgba(176,38,255,0.15)] relative">
+            <div class="h-40 bg-slate-800 overflow-hidden relative">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent z-10"></div>
+              <img src={product.imageUrl} alt={product.name} class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500 group-hover:scale-105" />
+            </div>
+            
+            <div class="p-5 flex flex-col flex-1 z-20 -mt-8">
+              <span class="text-xs font-mono font-bold tracking-widest px-2 py-1 bg-slate-950 text-slate-400 rounded w-max mb-3 border border-slate-800">{product.category}</span>
+              <h3 class="text-lg font-bold text-white mb-2 leading-tight">{product.name}</h3>
+              <p class="text-neon-green font-mono font-bold text-xl drop-shadow-[0_0_5px_rgba(57,255,20,0.3)] mb-6">{product.price} DC</p>
+              
               <button 
                 onclick={() => purchaseProduct(product.id)}
                 disabled={user.balance < product.price}
+                class="mt-auto w-full py-3 rounded-md uppercase text-sm font-bold tracking-wider transition-all duration-300
+                  {user.balance >= product.price 
+                    ? 'bg-neon-green/10 text-neon-green border border-neon-green/50 hover:bg-neon-green hover:text-slate-950 shadow-[0_0_10px_rgba(57,255,20,0.1)] hover:shadow-[0_0_20px_rgba(57,255,20,0.4)]' 
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'}"
               >
-                Kaufen
+                {user.balance >= product.price ? 'Kaufen' : 'Insufficient Funds'}
               </button>
             </div>
           </div>
@@ -57,29 +96,70 @@
       </div>
     </section>
 
-    <section class="orders">
-      <h2>Deine Lieferungen</h2>
+    <!-- Orders -->
+    <section class="space-y-4">
+      <h2 class="text-xl font-bold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">Logistik-Feed</h2>
       {#if orders.length === 0}
-        <p class="empty-state">Noch keine Bestellungen. Shoppe etwas für schnelles Dopamin!</p>
+        <div class="p-8 text-center bg-slate-900 border border-slate-800 border-dashed rounded-xl text-slate-500 font-mono">
+          No active shipments found. Waiting for input...
+        </div>
       {:else}
-        <div class="order-list">
+        <div class="flex flex-col gap-4">
           {#each [...orders].reverse() as order}
-            <div class="order-item" class:delivered={order.status === 'DELIVERED'} class:opened={order.status === 'OPENED'}>
-              <div class="order-header">
-                <strong>Paket: {products.find(p => p.id === order.productId)?.name}</strong>
-                <span class="status {order.status.toLowerCase()}">{order.status}</span>
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-5 relative overflow-hidden transition-all
+              {order.status === 'DELIVERED' ? 'border-cyber-gold/50 shadow-[0_0_15px_rgba(255,215,0,0.1)]' : ''}
+              {order.status === 'OPENED' ? 'opacity-60 grayscale hover:grayscale-0' : ''}
+            ">
+              <!-- Left status indicator line -->
+              <div class="absolute left-0 top-0 bottom-0 w-1
+                {order.status === 'PROCESSING' ? 'bg-orange-500 shadow-[0_0_8px_#f97316]' : ''}
+                {order.status === 'SHIPPED' ? 'bg-blue-500 shadow-[0_0_8px_#3b82f6]' : ''}
+                {order.status === 'DELIVERED' ? 'bg-cyber-gold shadow-[0_0_8px_#ffd700]' : ''}
+                {order.status === 'OPENED' ? 'bg-neon-green' : ''}
+              "></div>
+
+              <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                <div>
+                  <h4 class="font-bold text-white text-lg">{products.find(p => p.id === order.productId)?.name}</h4>
+                  <p class="text-xs text-slate-500 font-mono">ID: {order.id.split('-')[0]}</p>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                  {#if order.status === 'PROCESSING' || order.status === 'SHIPPED'}
+                    <span class="font-mono text-sm bg-slate-950 px-3 py-1 rounded text-red-400 border border-red-900/50 flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                      ETA: {getRemainingSeconds(order.deliveryEta)}s
+                    </span>
+                  {/if}
+                  
+                  <span class="font-mono text-xs uppercase tracking-wider px-3 py-1 rounded-full border
+                    {order.status === 'PROCESSING' ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : ''}
+                    {order.status === 'SHIPPED' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' : ''}
+                    {order.status === 'DELIVERED' ? 'bg-cyber-gold/10 text-cyber-gold border-cyber-gold/30' : ''}
+                    {order.status === 'OPENED' ? 'bg-neon-green/10 text-neon-green border-neon-green/30' : ''}
+                  ">
+                    {order.status}
+                  </span>
+                </div>
               </div>
-              <div class="order-details">
-                <p>Bestellt: {new Date(order.orderDate).toLocaleString()}</p>
-                {#if order.status === 'PROCESSING' || order.status === 'SHIPPED'}
-                  <p class="eta">Ankunft in: {getRemainingSeconds(order.deliveryEta)}s</p>
-                {/if}
+
+              <!-- Tracking Log -->
+              <div class="bg-slate-950 rounded p-3 font-mono text-xs space-y-2 border border-slate-800">
+                {#each order.trackingSteps as step}
+                  <div class="flex gap-3 items-start text-slate-400">
+                    <span class="text-neon-purple shrink-0">[{new Date(step.timestamp).toLocaleTimeString()}]</span>
+                    <span class="{step.message.includes('DOPAMIN') ? 'text-neon-green drop-shadow-[0_0_5px_rgba(57,255,20,0.5)] font-bold text-sm' : ''}">{step.message}</span>
+                  </div>
+                {/each}
               </div>
+
               {#if order.status === 'DELIVERED'}
-                <button class="primary-btn" onclick={() => openPackage(order.id)}>Paket öffnen 🎁</button>
-              {/if}
-              {#if order.status === 'OPENED'}
-                <p class="dopamine-msg">💥 DOPAMIN FREIGESETZT! 💥</p>
+                <button 
+                  onclick={() => openPackage(order.id)}
+                  class="mt-4 w-full py-3 bg-gradient-to-r from-cyber-gold/20 to-orange-500/20 hover:from-cyber-gold hover:to-orange-500 hover:text-slate-900 text-cyber-gold border border-cyber-gold/50 rounded-md font-bold uppercase tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)]"
+                >
+                  Initiate Unboxing Sequence 🎁
+                </button>
               {/if}
             </div>
           {/each}
@@ -88,243 +168,9 @@
     </section>
   </main>
 
-  <footer>
-    <p>KoalaShip © 2026 - <a href="https://github.com/Shik3i/KoalaShip.git" target="_blank">GitHub</a></p>
+  <footer class="bg-slate-900 border-t border-slate-800 py-8 text-center mt-auto">
+    <p class="text-slate-500 font-mono text-sm">
+      KoalaShip OS v1.0 // <a href="https://github.com/Shik3i/KoalaShip.git" target="_blank" class="text-neon-purple hover:text-neon-green transition-colors">GitHub Repository</a>
+    </p>
   </footer>
 </div>
-
-<style>
-  :global(body) {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #f4f4f9;
-    color: #333;
-  }
-
-  .app-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
-  header {
-    background: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    padding: 1rem 2rem;
-  }
-
-  .header-content {
-    max-width: 1000px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  header h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: #2c3e50;
-  }
-
-  .github-link {
-    display: flex;
-    align-items: center;
-    color: inherit;
-    text-decoration: none;
-    transition: opacity 0.2s;
-  }
-  
-  .github-link:hover {
-    opacity: 0.7;
-  }
-
-  main {
-    flex: 1;
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2rem;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  section {
-    margin-bottom: 2.5rem;
-  }
-
-  h2 {
-    color: #2c3e50;
-    margin-bottom: 1rem;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 0.5rem;
-  }
-
-  .card {
-    background: #fff;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  }
-
-  .actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-  }
-
-  button {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.2s;
-  }
-
-  button:hover:not(:disabled) {
-    background: #2980b9;
-  }
-
-  button:disabled {
-    background: #bdc3c7;
-    cursor: not-allowed;
-  }
-
-  .primary-btn {
-    background: #2ecc71;
-    margin-top: 1rem;
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1.1rem;
-  }
-
-  .primary-btn:hover {
-    background: #27ae60;
-  }
-
-  .product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .product-card {
-    background: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: column;
-  }
-
-  .product-card img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-  }
-
-  .product-info {
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-
-  .product-info h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
-  }
-
-  .price {
-    font-weight: bold;
-    color: #e67e22;
-    margin-bottom: 1rem;
-  }
-
-  .product-info button {
-    margin-top: auto;
-  }
-
-  .order-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .order-item {
-    background: #fff;
-    padding: 1rem;
-    border-radius: 8px;
-    border-left: 4px solid #3498db;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  }
-
-  .order-item.delivered {
-    border-left-color: #f1c40f;
-    background: #fffdf5;
-  }
-
-  .order-item.opened {
-    border-left-color: #2ecc71;
-    opacity: 0.7;
-  }
-
-  .order-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-  }
-
-  .status {
-    font-size: 0.8rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 12px;
-    font-weight: bold;
-  }
-
-  .status.processing { background: #e0f7fa; color: #00838f; }
-  .status.shipped { background: #fff3e0; color: #e65100; }
-  .status.delivered { background: #f1c40f; color: #fff; }
-  .status.opened { background: #e8f5e9; color: #2e7d32; }
-
-  .order-details p {
-    margin: 0.2rem 0;
-    font-size: 0.9rem;
-    color: #666;
-  }
-
-  .eta {
-    font-weight: bold;
-    color: #e74c3c !important;
-  }
-
-  .dopamine-msg {
-    text-align: center;
-    font-weight: bold;
-    color: #e67e22;
-    margin-top: 1rem;
-    font-size: 1.2rem;
-    animation: pop 0.5s ease-out;
-  }
-
-  @keyframes pop {
-    0% { transform: scale(0.8); opacity: 0; }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  footer {
-    text-align: center;
-    padding: 2rem;
-    background: #fff;
-    border-top: 1px solid #eee;
-    color: #7f8c8d;
-  }
-
-  footer a {
-    color: #3498db;
-    text-decoration: none;
-  }
-</style>
