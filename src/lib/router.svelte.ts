@@ -1,4 +1,4 @@
-export type Route = 'ONBOARDING' | 'DASHBOARD' | 'SHOP' | 'HISTORY' | 'MAP';
+export type Route = 'ONBOARDING' | 'DASHBOARD' | 'SHOP' | 'HISTORY' | 'MAP' | 'ROOM' | 'PROFILE' | 'IMPRINT' | 'PRIVACY' | 'CHANGELOG';
 
 export const routerState = $state({
     currentRoute: 'DASHBOARD' as Route
@@ -16,7 +16,7 @@ export function initRouter() {
     
     function handleHashChange() {
         const hash = window.location.hash.replace('#', '');
-        const validRoutes = ['ONBOARDING', 'DASHBOARD', 'SHOP', 'HISTORY', 'MAP'];
+        const validRoutes = ['ONBOARDING', 'DASHBOARD', 'SHOP', 'HISTORY', 'MAP', 'ROOM', 'PROFILE', 'IMPRINT', 'PRIVACY', 'CHANGELOG'];
         if (validRoutes.includes(hash)) {
             routerState.currentRoute = hash as Route;
         } else {

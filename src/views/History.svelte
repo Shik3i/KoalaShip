@@ -1,11 +1,32 @@
 <script lang="ts">
-  import { orders, products, openPackage } from '../lib/store.svelte';
+  import { orders, products, openPackage, returnOrder, user } from '../lib/store.svelte';
   import { t } from '../lib/i18n.svelte';
   
   // Unboxing Sequence State (Local to History)
   let activeUnboxingOrderId = $state<string | null>(null);
   let unboxingClicks = $state(0);
   let isShaking = $state(false);
+  let returnOrderId = $state<string | null>(null);
+  let returnPosition = $state(0);
+  let returnDirection = 1;
+  let returnTimer: number | null = null;
+
+  function startReturn(orderId: string) {
+    returnOrderId = orderId;
+    returnPosition = 0;
+    returnTimer = window.setInterval(() => {
+      returnPosition += returnDirection * 4;
+      if (returnPosition >= 100 || returnPosition <= 0) returnDirection *= -1;
+    }, 30);
+  }
+
+  function finishReturn() {
+    if (!returnOrderId) return;
+    if (returnTimer) clearInterval(returnTimer);
+    const score = Math.max(0, 100 - Math.abs(50 - returnPosition) * 2);
+    returnOrder(returnOrderId, score);
+    returnOrderId = null;
+  }
 
   function initiateUnboxing(orderId: string) {
     activeUnboxingOrderId = orderId;
@@ -114,6 +135,11 @@
               <span>🎁</span> Paket öffnen
             </button>
           {/if}
+          {#if order.status === 'OPENED' && !user.returnedOrderIds?.includes(order.id)}
+            <button onclick={() => startReturn(order.id)} class="mt-4 ml-4 rounded-xl bg-slate-200 px-5 py-3 font-bold dark:bg-slate-700">Retoure starten</button>
+          {:else if user.returnedOrderIds?.includes(order.id)}
+            <span class="ml-4 mt-4 inline-block rounded-lg bg-rose-100 px-3 py-2 text-xs font-bold text-rose-700">RETOURNIERT</span>
+          {/if}
         </div>
       {/each}
     </div>
@@ -175,5 +201,18 @@
       </div>
     {/if}
     
+  </div>
+{/if}
+
+{#if returnOrderId}
+  <div class="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/70 p-4">
+    <div class="w-full max-w-lg rounded-3xl bg-white p-8 text-center dark:bg-slate-800">
+      <h2 class="text-3xl font-black">Retouren-Scanner</h2>
+      <p class="mb-6 text-slate-500">Stoppe den Marker möglichst nah an der Mitte. Je besser der Treffer, desto höher die Erstattung.</p>
+      <div class="relative h-12 rounded-full bg-gradient-to-r from-rose-400 via-emerald-400 to-rose-400">
+        <div class="absolute top-0 h-12 w-2 bg-slate-950" style={`left:${returnPosition}%`}></div>
+      </div>
+      <button onclick={finishReturn} class="mt-8 w-full rounded-xl bg-indigo-600 py-4 font-black text-white">JETZT STOPPEN</button>
+    </div>
   </div>
 {/if}

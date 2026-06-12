@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { user, products, purchaseProduct } from '../lib/store.svelte';
+  import { user, products, purchaseProduct, toggleWishlist, getProductPrice, getActiveShopEvent } from '../lib/store.svelte';
   import { t } from '../lib/i18n.svelte';
   import CoinIcon from '../components/CoinIcon.svelte';
 
@@ -17,6 +17,8 @@
   let shakeProductId = $state<string | null>(null);
   let isLoading = $state(true);
   let visibleRounds = $state(1);
+  const activeShopEvent = getActiveShopEvent();
+  let personalizedProducts = $derived([...products].sort((a, b) => Number(b.category === user.favoriteCategory) - Number(a.category === user.favoriteCategory)));
 
   setTimeout(() => isLoading = false, 700);
 
@@ -74,6 +76,11 @@
         </div>
     </label>
   </div>
+  <div class="rounded-2xl bg-gradient-to-r from-fuchsia-600 to-indigo-600 p-5 text-white shadow-lg">
+    <p class="text-xs font-black uppercase tracking-widest">Aktuelles Shop-Event</p>
+    <h3 class="text-2xl font-black">{activeShopEvent.name}</h3>
+    <p>{Math.round(activeShopEvent.discount * 100)}% Rabatt auf {activeShopEvent.category}. Wechselt täglich, ganz ohne Stress-Countdown.</p>
+  </div>
   
   {#if isLoading}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" aria-label="Produkte werden geladen">
@@ -83,9 +90,9 @@
     </div>
   {:else}
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-    {#each Array(visibleRounds).flatMap((_, round) => products.map(product => ({ product, key: `${round}-${product.id}` }))) as entry (entry.key)}
+    {#each Array(visibleRounds).flatMap((_, round) => personalizedProducts.map(product => ({ product, key: `${round}-${product.id}` }))) as entry (entry.key)}
       {@const product = entry.product}
-      {@const totalCost = product.price + (isExpress ? 50 : 0)}
+      {@const totalCost = getProductPrice(product) + (isExpress ? 50 : 0)}
       {@const canAfford = user.balance >= totalCost}
       {@const isBuying = buyingProductId === product.id}
 
@@ -94,11 +101,17 @@
         <!-- Image Area -->
         <div class="w-full aspect-square bg-slate-50 dark:bg-slate-900 rounded-xl mb-4 flex items-center justify-center text-8xl shadow-inner relative overflow-hidden group-hover:scale-[1.02] transition-transform">
           <span class="relative z-10 drop-shadow-md" role="img" aria-label={product.name}>{product.imageUrl}</span>
+          {#if product.category === user.favoriteCategory}
+            <div class="absolute bottom-3 left-3 rounded-full bg-emerald-500 px-2 py-1 text-[10px] font-black text-white">FÜR DICH</div>
+          {/if}
           <!-- Fake Prime Badge -->
           <div class="absolute top-3 left-3 bg-indigo-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             PRIME
           </div>
+          <button onclick={() => toggleWishlist(product.id)} class="absolute right-3 top-3 z-20 rounded-full bg-white/90 p-2 text-xl shadow" aria-label={`${product.name} ${user.wishlist?.includes(product.id) ? 'von Wunschliste entfernen' : 'merken'}`}>
+            {user.wishlist?.includes(product.id) ? '♥' : '♡'}
+          </button>
         </div>
         
         <!-- Content Area -->
@@ -115,6 +128,12 @@
             </div>
             
             <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-4">{product.name}</h3>
+            {#if user.wishlist?.includes(product.id)}
+              <div class="mb-3">
+                <div class="mb-1 flex justify-between text-xs font-bold text-slate-500"><span>Sparziel</span><span>{Math.min(100, Math.round(user.balance / getProductPrice(product) * 100))}%</span></div>
+                <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"><div class="h-full bg-emerald-500" style={`width:${Math.min(100, user.balance / getProductPrice(product) * 100)}%`}></div></div>
+              </div>
+            {/if}
             
             <div class="mt-auto flex items-end justify-between mb-4">
                 <div class="flex items-center gap-1.5">

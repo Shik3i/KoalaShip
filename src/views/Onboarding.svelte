@@ -2,10 +2,13 @@
   import { onMount } from 'svelte';
   import { jobPresets, completeOnboarding } from '../lib/store.svelte';
   import { navigateTo } from '../lib/router.svelte';
-  import { t } from '../lib/i18n.svelte';
+  import { i18nState, setLocale, t, type Locale } from '../lib/i18n.svelte';
   import CoinIcon from '../components/CoinIcon.svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
+  import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+  import markerIcon from 'leaflet/dist/images/marker-icon.png';
+  import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
   let name = $state('');
   let selectedJobId = $state(jobPresets[0].id);
@@ -14,19 +17,31 @@
   let marker: L.Marker | null = null;
   let homeLat = $state<number | null>(null);
   let homeLng = $state<number | null>(null);
+  let bio = $state('');
+  let jobDescription = $state('');
+  let pronouns = $state('');
+  let favoriteCategory = $state<'LUXURY' | 'EVERYDAY' | 'ABSURD' | 'MYSTERY'>('EVERYDAY');
+  let deliveryNote = $state('');
+  let avatarColor = $state('#4f46e5');
+
+  const languages: { locale: Locale; flag: string; label: string }[] = [
+    { locale: 'DE', flag: '🇩🇪', label: 'Deutsch' },
+    { locale: 'EN', flag: '🇬🇧', label: 'English' },
+    { locale: 'ES', flag: '🇪🇸', label: 'Español' }
+  ];
 
   onMount(() => {
     // Fix default marker icon issues in Leaflet with Vite
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconRetinaUrl: markerIcon2x,
+        iconUrl: markerIcon,
+        shadowUrl: markerShadow,
     });
 
     map = L.map(mapContainer as HTMLElement).setView([51.165691, 10.451526], 6); // default germany
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('/api/tiles/light/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
@@ -46,34 +61,64 @@
     const job = jobPresets.find(j => j.id === selectedJobId);
     if (!job) return;
 
-    completeOnboarding(name, job, homeLat, homeLng);
+    completeOnboarding(name, job, homeLat, homeLng, {
+      bio, jobDescription, pronouns, favoriteCategory, deliveryNote, avatarColor
+    });
     navigateTo('DASHBOARD');
   }
 </script>
 
 <div class="flex flex-col items-center justify-center min-h-screen p-6 relative">
   <div class="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-2xl flex flex-col gap-8">
+    <div class="flex flex-wrap justify-center gap-2" aria-label="Sprache auswählen">
+      {#each languages as language}
+        <button
+          onclick={() => setLocale(language.locale)}
+          class="flex items-center gap-2 rounded-xl border px-4 py-2 font-bold {i18nState.locale === language.locale ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'border-slate-200 dark:border-slate-700'}"
+          aria-pressed={i18nState.locale === language.locale}
+        >
+          <span class="country-flag text-xl" aria-hidden="true">{language.flag}</span>{language.label}
+        </button>
+      {/each}
+    </div>
     
     <div class="text-center space-y-2">
         <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
         {t('onboarding.title')}
         </h2>
-        <p class="text-slate-500 dark:text-slate-400">Erstelle deinen Account und erhalte 5.000 <CoinIcon class="w-4 h-4 inline" /> Startbonus.</p>
+        <p class="text-slate-500 dark:text-slate-400">{t('onboarding.subtitle')} <CoinIcon class="w-4 h-4 inline" /></p>
     </div>
 
     <div class="space-y-3">
-      <label for="profile-name" class="text-slate-700 dark:text-slate-300 font-bold text-sm">Vorname / Alias</label>
+      <label for="profile-name" class="text-slate-700 dark:text-slate-300 font-bold text-sm">{t('onboarding.name')}</label>
       <input 
         id="profile-name"
         type="text" 
         bind:value={name} 
-        placeholder="z.B. Max Mustermann"
+        placeholder={t('onboarding.name_placeholder')}
         class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
       />
     </div>
 
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="space-y-2 text-sm font-bold">
+        {t('onboarding.pronouns')} <span class="font-normal text-slate-400">({t('onboarding.optional')})</span>
+        <input bind:value={pronouns} maxlength="30" placeholder={t('onboarding.pronouns_placeholder')} class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900" />
+      </label>
+      <label class="space-y-2 text-sm font-bold">
+        {t('onboarding.avatar')}
+        <input bind:value={avatarColor} type="color" class="mt-2 h-12 w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-900" />
+      </label>
+    </div>
+
+    <label class="space-y-2 text-sm font-bold">
+      {t('onboarding.bio')} <span class="font-normal text-slate-400">({t('onboarding.optional')})</span>
+      <textarea bind:value={bio} maxlength="180" rows="3" placeholder={t('onboarding.bio_placeholder')} class="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"></textarea>
+      <span class="block text-right text-xs font-normal text-slate-400">{bio.length}/180</span>
+    </label>
+
     <div class="space-y-3">
-      <div class="text-slate-700 dark:text-slate-300 font-bold text-sm" id="job-label">Berufs-Profil (Einkommen)</div>
+      <div class="text-slate-700 dark:text-slate-300 font-bold text-sm" id="job-label">{t('onboarding.job')}</div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" role="group" aria-labelledby="job-label">
         {#each jobPresets as preset}
           <label class="cursor-pointer group">
@@ -82,19 +127,39 @@
               <h3 class="font-bold text-slate-900 dark:text-white">{preset.title}</h3>
               <div class="flex items-center gap-1 mt-1">
                   <CoinIcon class="w-4 h-4" />
-                  <p class="text-indigo-600 dark:text-indigo-400 font-medium text-sm">{preset.salary.toLocaleString('de-DE')} / {preset.interval === 'WEEKLY' ? 'Woche' : 'Monat'}</p>
+                  <p class="text-indigo-600 dark:text-indigo-400 font-medium text-sm">{preset.salary.toLocaleString()} / {preset.interval === 'WEEKLY' ? t('onboarding.week') : t('onboarding.month')}</p>
               </div>
             </div>
           </label>
         {/each}
       </div>
+      <label class="block text-sm font-bold">
+        {t('onboarding.job_description')} <span class="font-normal text-slate-400">({t('onboarding.optional')})</span>
+        <textarea bind:value={jobDescription} maxlength="160" rows="2" placeholder={t('onboarding.job_placeholder')} class="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900"></textarea>
+      </label>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <label class="text-sm font-bold">
+        {t('onboarding.favorite')}
+        <select bind:value={favoriteCategory} class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+          <option value="EVERYDAY">{t('onboarding.everyday')}</option><option value="LUXURY">{t('onboarding.luxury')}</option><option value="ABSURD">{t('onboarding.absurd')}</option><option value="MYSTERY">{t('onboarding.mystery')}</option>
+        </select>
+      </label>
+      <label class="text-sm font-bold">
+        {t('onboarding.delivery_note')} <span class="font-normal text-slate-400">({t('onboarding.optional')})</span>
+        <input bind:value={deliveryNote} maxlength="80" placeholder={t('onboarding.delivery_placeholder')} class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900" />
+      </label>
     </div>
 
     <div class="space-y-3">
-      <div class="text-slate-700 dark:text-slate-300 font-bold text-sm" id="map-label">Lieferadresse markieren (Klick auf Karte)</div>
+      <div class="text-slate-700 dark:text-slate-300 font-bold text-sm" id="map-label">{t('onboarding.map')}</div>
       <div bind:this={mapContainer} role="application" aria-labelledby="map-label" class="w-full h-64 rounded-xl border-2 border-slate-200 dark:border-slate-700 z-0 overflow-hidden shadow-inner"></div>
+      <p class="rounded-xl bg-indigo-50 p-3 text-xs leading-relaxed text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300">
+        {t('onboarding.map_privacy')}
+      </p>
       {#if !homeLat}
-        <p class="text-red-500 text-xs font-medium">Bitte eine Lieferadresse auf der Karte markieren.</p>
+        <p class="text-red-500 text-xs font-medium">{t('onboarding.map_required')}</p>
       {/if}
     </div>
 
@@ -105,5 +170,10 @@
     >
       {t('onboarding.start')}
     </button>
+
+    <div class="flex flex-wrap justify-center gap-4 text-xs font-bold text-slate-500">
+      <button onclick={() => navigateTo('IMPRINT')} class="hover:text-indigo-500">Imprint / Impressum</button>
+      <button onclick={() => navigateTo('PRIVACY')} class="hover:text-indigo-500">Privacy / Datenschutz</button>
+    </div>
   </div>
 </div>

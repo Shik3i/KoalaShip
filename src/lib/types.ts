@@ -25,6 +25,16 @@ export interface UserProfile {
     // Legacy Fields
     mode: GameMode;
     balance: number;      // Fake-Geld auf dem Konto
+    xp?: number;
+    wishlist?: string[];
+    roomItems?: string[];
+    returnedOrderIds?: string[];
+    bio?: string;
+    jobDescription?: string;
+    pronouns?: string;
+    favoriteCategory?: ProductCategory;
+    deliveryNote?: string;
+    avatarColor?: string;
 }
 
 export type ProductCategory = 'LUXURY' | 'EVERYDAY' | 'ABSURD' | 'MYSTERY';
@@ -58,4 +68,5 @@ export interface Order {
     isExpress?: boolean;
     trackingSteps: TrackingStep[];
     revealedProductId?: string;
+    deliveryEvent?: string;
 }

@@ -13,6 +13,10 @@
   import Shop from './views/Shop.svelte';
   import History from './views/History.svelte';
   import LiveTracking from './views/LiveTracking.svelte';
+  import Room from './views/Room.svelte';
+  import Profile from './views/Profile.svelte';
+  import Legal from './views/Legal.svelte';
+  import Changelog from './views/Changelog.svelte';
   let soundEnabled = $state(true);
 
   onMount(() => {
@@ -26,7 +30,8 @@
   // Force Onboarding if no user data
   $effect(() => {
     if (typeof window !== 'undefined') {
-        if (!user.name && routerState.currentRoute !== 'ONBOARDING') {
+        const publicRoutes = ['ONBOARDING', 'IMPRINT', 'PRIVACY', 'CHANGELOG'];
+        if (!user.name && !publicRoutes.includes(routerState.currentRoute)) {
             navigateTo('ONBOARDING');
         }
     }
@@ -36,6 +41,7 @@
     { route: 'DASHBOARD', labelKey: 'nav.dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
     { route: 'SHOP', labelKey: 'nav.shop', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
     { route: 'HISTORY', labelKey: 'nav.history', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+    { route: 'ROOM', labelKey: 'Zimmer', icon: 'M3 21h18M5 21V9l7-6 7 6v12M9 21v-6h6v6' },
     { route: 'MAP', labelKey: 'nav.map', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' }
   ];
 </script>
@@ -52,6 +58,12 @@
   
   {#if routerState.currentRoute === 'ONBOARDING'}
     <Onboarding />
+  {:else if routerState.currentRoute === 'IMPRINT'}
+    <main class="flex-1 w-full px-4 py-10 sm:px-6"><Legal page="IMPRINT" /></main>
+  {:else if routerState.currentRoute === 'PRIVACY'}
+    <main class="flex-1 w-full px-4 py-10 sm:px-6"><Legal page="PRIVACY" /></main>
+  {:else if routerState.currentRoute === 'CHANGELOG'}
+    <main class="flex-1 w-full px-4 py-10 sm:px-6"><Changelog /></main>
   {:else}
     <!-- Premium Header / Navbar -->
     <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-colors duration-500">
@@ -98,13 +110,17 @@
                     onchange={(e) => setLocale(e.currentTarget.value as any)}
                     class="bg-transparent text-xs font-bold text-slate-600 dark:text-slate-300 px-3 py-2 outline-none cursor-pointer appearance-none text-center"
                 >
-                    <option value="DE" class="text-slate-900">🇩🇪 DE</option>
-                    <option value="EN" class="text-slate-900">🇬🇧 EN</option>
-                    <option value="ES" class="text-slate-900">🇪🇸 ES</option>
+                    <option value="DE" class="country-flag text-slate-900">🇩🇪 DE</option>
+                    <option value="EN" class="country-flag text-slate-900">🇬🇧 EN</option>
+                    <option value="ES" class="country-flag text-slate-900">🇪🇸 ES</option>
                 </select>
             </div>
 
             <!-- Theme Toggle -->
+            <button onclick={() => navigateTo('PROFILE')} class="flex h-9 w-9 items-center justify-center rounded-xl font-black text-white shadow" style={`background:${user.avatarColor ?? '#4f46e5'}`} aria-label="Profil öffnen">
+                {user.name?.slice(0, 1).toUpperCase()}
+            </button>
+
             <button
                 onclick={() => { soundEnabled = !soundEnabled; setSoundEnabled(soundEnabled); }}
                 class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 transition-colors"
@@ -138,8 +154,22 @@
         <History />
       {:else if routerState.currentRoute === 'MAP'}
         <LiveTracking />
+      {:else if routerState.currentRoute === 'ROOM'}
+        <Room />
+      {:else if routerState.currentRoute === 'PROFILE'}
+        <Profile />
       {/if}
     </main>
+
+    <footer class="border-t border-slate-200 bg-white/70 px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/70">
+      <button onclick={() => navigateTo('IMPRINT')} class="mx-3 font-bold hover:text-indigo-500">Imprint / Impressum</button>
+      <button onclick={() => navigateTo('PRIVACY')} class="mx-3 font-bold hover:text-indigo-500">Privacy / Datenschutz</button>
+      <a href="https://github.com/Shik3i/KoalaShip" target="_blank" rel="noopener noreferrer" class="mx-3 inline-flex items-center gap-1 font-bold hover:text-indigo-500">
+        <img src="/icons/github.svg" alt="" class="h-4 w-4" />GitHub
+      </a>
+      <button onclick={() => navigateTo('CHANGELOG')} class="mx-3 font-bold hover:text-indigo-500">v0.2.0 · Changelog</button>
+      <span class="mx-3">KoalaShip · fiktive Shopping-Simulation</span>
+    </footer>
 
     <!-- Mobile Nav (Bottom Bar) -->
     <nav class="md:hidden fixed bottom-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 flex justify-around p-2 z-50 transition-colors duration-500">

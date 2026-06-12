@@ -85,8 +85,8 @@
       if (currentTileLayer) map.removeLayer(currentTileLayer);
       const isDark = themeState.current === 'dark';
       const url = isDark 
-          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-          : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+          ? '/api/tiles/dark/{z}/{x}/{y}.png'
+          : '/api/tiles/light/{z}/{x}/{y}.png';
       currentTileLayer = L.tileLayer(url, {
           attribution: '&copy; OpenStreetMap &copy; CARTO',
           maxZoom: 20

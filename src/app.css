@@ -1,5 +1,45 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Twemoji Country Flags";
+  src: url("/fonts/TwemojiCountryFlags.woff2") format("woff2");
+  font-display: swap;
+}
+
+.country-flag {
+  font-family: "Twemoji Country Flags", sans-serif;
+  font-style: normal;
+}
+
+.legal-copy h1 {
+  margin-bottom: 1rem;
+  font-size: 2.25rem;
+  font-weight: 900;
+}
+
+.legal-copy h2 {
+  margin-top: 2rem;
+  margin-bottom: .5rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.legal-copy p {
+  line-height: 1.75;
+  color: #475569;
+}
+
+.dark .legal-copy p {
+  color: #cbd5e1;
+}
+
+.legal-copy a {
+  color: #4f46e5;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 @theme {
   --animate-shake: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
   

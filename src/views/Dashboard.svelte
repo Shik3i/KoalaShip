@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { user, switchMode, resetUser, orders, products } from '../lib/store.svelte';
+  import { user, switchMode, resetUser, orders, products, getAchievements, getPlayerLevel, getProductPrice } from '../lib/store.svelte';
   import { navigateTo } from '../lib/router.svelte';
   import { t } from '../lib/i18n.svelte';
   import CoinIcon from '../components/CoinIcon.svelte';
@@ -53,6 +53,8 @@
   }
 
   let recentOrders = $derived([...orders].reverse().slice(0, 3));
+  let achievements = $derived(getAchievements());
+  let playerLevel = $derived(getPlayerLevel());
 </script>
 
 <div class="space-y-8">
@@ -63,6 +65,49 @@
         <button onclick={switchMode} class="text-xs text-slate-500 hover:text-indigo-500 underline transition-colors">Wechseln</button>
     </div>
   </div>
+
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+      <p class="text-sm font-bold uppercase text-indigo-500">Level {playerLevel}</p>
+      <h3 class="text-2xl font-black">Koala-Karriere</h3>
+      <div class="mt-4 h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"><div class="h-full bg-indigo-500" style={`width:${(user.xp ?? 0) % 100}%`}></div></div>
+      <p class="mt-2 text-sm text-slate-500">{(user.xp ?? 0) % 100}/100 XP bis zum nächsten Level</p>
+    </section>
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+      <p class="text-sm font-bold uppercase text-emerald-500">Statistik</p>
+      <h3 class="text-2xl font-black">{orders.reduce((sum, order) => sum + (products.find(p => p.id === order.productId) ? getProductPrice(products.find(p => p.id === order.productId)!) : 0), 0).toLocaleString('de-DE')} KC</h3>
+      <p class="text-sm text-slate-500">Gesamter Bestellwert · {orders.filter(order => order.status === 'OPENED').length} geöffnet · {user.returnedOrderIds?.length ?? 0} retourniert</p>
+    </section>
+    <section class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+      <p class="text-sm font-bold uppercase text-amber-500">Sammlung</p>
+      <h3 class="text-2xl font-black">{new Set(orders.filter(order => order.status === 'OPENED').map(order => order.revealedProductId || order.productId)).size}/{products.length}</h3>
+      <button onclick={() => navigateTo('ROOM')} class="mt-3 font-bold text-indigo-600">Koala-Zimmer öffnen</button>
+    </section>
+  </div>
+
+  <section class="flex flex-col justify-between gap-6 rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800 sm:flex-row sm:items-center">
+    <div class="flex items-center gap-4">
+      <div class="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black text-white" style={`background:${user.avatarColor ?? '#4f46e5'}`}>{user.name?.slice(0, 1).toUpperCase()}</div>
+      <div>
+        <h3 class="text-xl font-black">{user.name} {user.pronouns ? `· ${user.pronouns}` : ''}</h3>
+        <p class="max-w-2xl text-sm text-slate-500">{user.bio || 'Dein Profil wartet noch auf eine kleine Geschichte.'}</p>
+        <p class="mt-1 text-xs font-bold text-indigo-500">Favorit: {user.favoriteCategory} · Lieferhinweis: {user.deliveryNote || 'keiner'}</p>
+      </div>
+    </div>
+    <button onclick={() => navigateTo('PROFILE')} class="rounded-xl bg-slate-100 px-5 py-3 font-bold dark:bg-slate-700">Profil bearbeiten</button>
+  </section>
+
+  <section class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
+    <h3 class="mb-4 text-xl font-black">Achievements</h3>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      {#each achievements as achievement}
+        <div class="rounded-xl p-4 {achievement.unlocked ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-200' : 'bg-slate-100 text-slate-400 dark:bg-slate-900'}">
+          <strong>{achievement.unlocked ? '✓' : '○'} {achievement.title}</strong>
+          <p class="text-xs">{achievement.description}</p>
+        </div>
+      {/each}
+    </div>
+  </section>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Main Wallet Card -->
