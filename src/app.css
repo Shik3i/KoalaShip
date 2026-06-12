@@ -9,6 +9,16 @@
   --color-slate-800: #1e293b;
 }
 
+  --animate-shake: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-2deg); }
+  20%, 80% { transform: translate3d(4px, 0, 0) rotate(2deg); }
+  30%, 50%, 70% { transform: translate3d(-8px, 0, 0) rotate(-4deg); }
+  40%, 60% { transform: translate3d(8px, 0, 0) rotate(4deg); }
+}
+
 body {
   @apply bg-slate-950 text-slate-200 font-sans antialiased;
 }

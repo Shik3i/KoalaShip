@@ -1,6 +1,38 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { user, products, orders, initTicker, addFunds, switchMode, purchaseProduct, openPackage } from './lib/store.svelte';
+  import { fade, scale } from 'svelte/transition';
+
+  let activeUnboxingOrderId = $state<string | null>(null);
+  let unboxingClicks = $state(0);
+  let isShaking = $state(false);
+
+  function initiateUnboxing(orderId: string) {
+    activeUnboxingOrderId = orderId;
+    unboxingClicks = 0;
+    isShaking = false;
+  }
+
+  function handleBoxClick() {
+    if (unboxingClicks >= 3) return;
+    unboxingClicks++;
+    
+    // reset animation
+    isShaking = false;
+    setTimeout(() => {
+      isShaking = true;
+      setTimeout(() => {
+        isShaking = false;
+        if (unboxingClicks === 3 && activeUnboxingOrderId) {
+          openPackage(activeUnboxingOrderId);
+        }
+      }, 300);
+    }, 10);
+  }
+
+  function closeUnboxing() {
+    activeUnboxingOrderId = null;
+  }
 
   onMount(() => {
     initTicker();
@@ -155,7 +187,7 @@
 
               {#if order.status === 'DELIVERED'}
                 <button 
-                  onclick={() => openPackage(order.id)}
+                  onclick={() => initiateUnboxing(order.id)}
                   class="mt-4 w-full py-3 bg-gradient-to-r from-cyber-gold/20 to-orange-500/20 hover:from-cyber-gold hover:to-orange-500 hover:text-slate-900 text-cyber-gold border border-cyber-gold/50 rounded-md font-bold uppercase tracking-widest transition-all duration-300 shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)]"
                 >
                   Initiate Unboxing Sequence 🎁
@@ -173,4 +205,57 @@
       KoalaShip OS v1.0 // <a href="https://github.com/Shik3i/KoalaShip.git" target="_blank" class="text-neon-purple hover:text-neon-green transition-colors">GitHub Repository</a>
     </p>
   </footer>
+
+  <!-- UNBOXING MODAL -->
+  {#if activeUnboxingOrderId}
+    {@const activeOrder = orders.find(o => o.id === activeUnboxingOrderId)}
+    {@const activeProduct = products.find(p => p.id === activeOrder?.productId)}
+    <div class="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4" transition:fade={{ duration: 300 }}>
+      
+      {#if unboxingClicks < 3}
+        <!-- The Box -->
+        <div class="flex flex-col items-center gap-8">
+          <h2 class="text-3xl font-bold text-cyber-gold drop-shadow-[0_0_10px_rgba(255,215,0,0.5)] uppercase tracking-widest">
+            Klicke zum Öffnen! ({unboxingClicks}/3)
+          </h2>
+          
+          <button 
+            onclick={handleBoxClick}
+            class="relative w-64 h-64 bg-[#8B5A2B] border-4 border-[#654321] rounded-lg shadow-2xl flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 group {isShaking ? 'animate-[shake_0.3s_cubic-bezier(.36,.07,.19,.97)_both]' : ''}"
+            style={isShaking ? 'animation-name: shake;' : ''}
+          >
+            <!-- Tape styling -->
+            <div class="absolute w-full h-12 bg-[#C19A6B]/80 top-1/2 -translate-y-1/2 shadow-inner"></div>
+            <div class="absolute w-12 h-full bg-[#C19A6B]/80 left-1/2 -translate-x-1/2 shadow-inner"></div>
+            
+            <span class="text-6xl group-hover:scale-110 transition-transform z-10 drop-shadow-md">📦</span>
+          </button>
+        </div>
+      {:else if activeProduct}
+        <!-- The Reveal -->
+        <div class="flex flex-col items-center gap-6 max-w-2xl text-center" in:scale={{ duration: 800, start: 0.5, opacity: 0 }}>
+          <div class="relative w-64 h-64 rounded-full bg-neon-purple/20 flex items-center justify-center shadow-[0_0_100px_rgba(176,38,255,0.6)] animate-pulse mb-4 border-2 border-neon-purple">
+            <img src={activeProduct.imageUrl} alt={activeProduct.name} class="w-48 h-48 object-contain drop-shadow-[0_0_20px_rgba(57,255,20,0.8)] z-10" />
+            <div class="absolute inset-0 bg-gradient-to-tr from-neon-green/20 to-neon-purple/20 rounded-full mix-blend-overlay"></div>
+          </div>
+          
+          <h2 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyber-gold via-neon-green to-neon-purple drop-shadow-[0_0_15px_rgba(255,215,0,0.6)] uppercase tracking-tighter">
+            {activeProduct.name}
+          </h2>
+          
+          <p class="text-xl font-mono text-neon-green font-bold bg-slate-900/80 px-6 py-2 rounded border border-neon-green/50 shadow-[0_0_15px_rgba(57,255,20,0.2)]">
+            Virtueller Flex-Faktor: +{Math.floor(Math.random() * 500 + 100)}% 🚀
+          </p>
+          
+          <button 
+            onclick={closeUnboxing}
+            class="mt-10 px-10 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 border-2 border-slate-600 hover:border-cyber-gold rounded-xl uppercase font-bold tracking-widest transition-all hover:shadow-[0_0_20px_rgba(255,215,0,0.3)]"
+          >
+            Dopamin eingesackt (Schließen)
+          </button>
+        </div>
+      {/if}
+      
+    </div>
+  {/if}
 </div>
