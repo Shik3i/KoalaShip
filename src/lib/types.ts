@@ -29,6 +29,7 @@ export interface UserProfile {
     wishlist?: string[];
     roomItems?: string[];
     returnedOrderIds?: string[];
+    favoriteOrderIds?: string[];
     bio?: string;
     jobDescription?: string;
     pronouns?: string;
@@ -37,13 +38,14 @@ export interface UserProfile {
     avatarColor?: string;
     cart?: CartItem[];
     compareIds?: string[];
-    dreamLists?: DreamList[];
+    wishlists?: Wishlist[];
     ownedPropertyIds?: string[];
     activePropertyId?: string;
     propertyDecor?: Record<string, string[]>;
     equippedOutfit?: string[];
     featuredVehicleId?: string;
     featuredElectronics?: string[];
+    messages?: Message[];
 }
 
 export type ProductCategory = 'LUXURY' | 'EVERYDAY' | 'ABSURD' | 'MYSTERY';
@@ -60,7 +62,18 @@ export interface Product {
     description?: string;
     brand?: string;
     inventoryType?: InventoryType;
-    variants?: { name: string; values: string[] }[];
+    variants?: { 
+        name: string; 
+        values: {
+            name: string;
+            description?: string;
+            pros?: string[];
+            cons?: string[];
+            priceModifier?: number;
+        }[] 
+    }[];
+    whyThisProduct?: string[];
+    relatedProductIds?: string[];
     specs?: Record<string, string>;
     stock?: number;
     deliveryDays?: number;
@@ -73,11 +86,17 @@ export interface CartItem {
     variant: string;
 }
 
-export interface DreamList {
+export interface WishlistItem {
+    productId: string;
+    addedAt: number;
+}
+
+export interface Wishlist {
     id: string;
     name: string;
-    productIds: string[];
-    targetNote?: string;
+    description: string;
+    mood: string;
+    items: WishlistItem[];
 }
 
 export interface Property {
@@ -123,4 +142,36 @@ export interface Order {
     discountAmount?: number;
     estimatedStops?: number;
     lastTrackingUpdate?: number;
+    lastRefreshChunk?: number;
+    carrierId?: string;
+}
+
+export interface Carrier {
+    id: string;
+    name: string;
+    logo: string;
+    color: string;
+    rating: number;
+    reliability: number;
+    quirks: string[];
+    trackingMilestones: {
+        received: string;
+        transit: string;
+        sorting: string;
+        outForDelivery: string;
+        delivered: string;
+    };
+}
+
+export type MessageType = 'ORDER_CONFIRMATION' | 'SHIPPING_ANNOUNCEMENT' | 'SORTING_CENTER' | 'DELIVERY_TODAY' | 'DELIVERED' | 'INVOICE' | 'REVIEW';
+
+export interface Message {
+    id: string;
+    orderId: string;
+    type: MessageType;
+    sender: string;
+    subject: string;
+    content: string;
+    timestamp: number;
+    read: boolean;
 }

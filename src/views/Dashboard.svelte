@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { user, switchMode, resetUser, orders, products, getAchievements, getPlayerLevel, getProductPrice, isDeveloperMode, devAdvanceOrders, devDeliverOrders } from '../lib/store.svelte';
+  import { user, switchMode, resetUser, orders, getProducts, getAchievements, getPlayerLevel, getProductPrice, isDeveloperMode, devAdvanceOrders, devDeliverOrders } from '../lib/store.svelte';
   import { navigateTo } from '../lib/router.svelte';
   import { t } from '../lib/i18n.svelte';
   import CoinIcon from '../components/CoinIcon.svelte';
@@ -78,12 +78,12 @@
     </section>
     <section class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
       <p class="text-sm font-bold uppercase text-emerald-500">Statistik</p>
-      <h3 class="text-2xl font-black">{orders.reduce((sum, order) => sum + (products.find(p => p.id === order.productId) ? getProductPrice(products.find(p => p.id === order.productId)!) : 0), 0).toLocaleString('de-DE')} KC</h3>
+      <h3 class="text-2xl font-black">{orders.reduce((sum, order) => sum + (getProducts().find(p => p.id === order.productId) ? getProductPrice(getProducts().find(p => p.id === order.productId)!) : 0), 0).toLocaleString('de-DE')} KC</h3>
       <p class="text-sm text-slate-500">Gesamter Bestellwert · {orders.filter(order => order.status === 'OPENED').length} geöffnet · {user.returnedOrderIds?.length ?? 0} retourniert</p>
     </section>
     <section class="rounded-3xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
       <p class="text-sm font-bold uppercase text-amber-500">Sammlung</p>
-      <h3 class="text-2xl font-black">{new Set(orders.filter(order => order.status === 'OPENED').map(order => order.revealedProductId || order.productId)).size}/{products.length}</h3>
+      <h3 class="text-2xl font-black">{new Set(orders.filter(order => order.status === 'OPENED').map(order => order.revealedProductId || order.productId)).size}/{getProducts().length}</h3>
       <button onclick={() => navigateTo('ROOM')} class="mt-3 font-bold text-indigo-600">Koala-Zimmer öffnen</button>
     </section>
   </div>
@@ -191,9 +191,9 @@
             {#each recentOrders as order}
                 <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
                     <div class="flex items-center gap-4">
-                        <div class="text-3xl">{products.find(p => p.id === order.productId)?.imageUrl}</div>
+                        <div class="text-3xl">{getProducts().find(p => p.id === order.productId)?.imageUrl}</div>
                         <div>
-                            <p class="font-bold text-slate-900 dark:text-white">{products.find(p => p.id === order.productId)?.name}</p>
+                            <p class="font-bold text-slate-900 dark:text-white">{getProducts().find(p => p.id === order.productId)?.name}</p>
                             <p 
                                 class="text-xs text-slate-500 cursor-help"
                                 title={new Date(order.orderDate).toLocaleString('de-DE')}

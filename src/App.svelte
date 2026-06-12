@@ -18,7 +18,10 @@
   import Profile from './views/Profile.svelte';
   import Legal from './views/Legal.svelte';
   import Changelog from './views/Changelog.svelte';
+  import InboxModal from './components/InboxModal.svelte';
   let soundEnabled = $state(true);
+  let inboxOpen = $state(false);
+  let unreadMessages = $derived(user.messages?.filter(m => !m.read).length ?? 0);
 
   onMount(() => {
     initTheme();
@@ -104,6 +107,18 @@
                 <span class="font-bold text-slate-800 dark:text-slate-200 font-mono">{Math.floor(user.balance).toLocaleString('de-DE')}</span>
             </div>
 
+            <!-- Inbox -->
+            <button 
+                onclick={() => inboxOpen = true}
+                class="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 transition-colors"
+                aria-label="Postfach öffnen"
+            >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                {#if unreadMessages > 0}
+                    <span class="absolute top-1.5 right-1.5 flex h-3 w-3 items-center justify-center rounded-full bg-rose-500 text-[8px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">{unreadMessages}</span>
+                {/if}
+            </button>
+
             <!-- Language Toggle -->
             <div class="flex items-center bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors shadow-sm overflow-hidden">
                 <select 
@@ -185,6 +200,9 @@
             </button>
         {/each}
     </nav>
+  {/if}
+  {#if inboxOpen}
+    <InboxModal close={() => inboxOpen = false} />
   {/if}
   <ToastHost />
 </div>

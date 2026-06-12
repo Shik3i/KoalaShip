@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { orders, user, fetchOsrmRoute } from '../lib/store.svelte';
+  import { orders, user, fetchOsrmRoute, carriers } from '../lib/store.svelte';
   import { t } from '../lib/i18n.svelte';
   import { themeState } from '../lib/theme.svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
-  import type { LatLng } from '../lib/types';
+  import type { LatLng, Order } from '../lib/types';
 
   let mapContainer: HTMLElement | undefined = $state();
   let map: L.Map | undefined;
@@ -16,13 +16,6 @@
   
   let activeOrderCount = $state(0);
   let deliveryOrders = $derived(orders.filter(order => order.status === 'OUT_FOR_DELIVERY'));
-
-  const koalaIcon = L.divIcon({
-    className: 'custom-koala-icon',
-    html: '<div class="transform -scale-x-100" style="font-size: 24px; text-shadow: 0 0 5px rgba(0,0,0,0.3); background: white; border-radius: 50%; padding: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">🐨</div>',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
-  });
 
   const homeIcon = L.divIcon({
     className: 'custom-home-icon',
@@ -37,6 +30,18 @@
     iconSize: [40, 40],
     iconAnchor: [20, 20]
   });
+
+  function getCarrierIcon(logo: string, color: string, count: number) {
+      return L.divIcon({
+        className: 'custom-carrier-icon',
+        html: `<div class="relative transform -scale-x-100" style="font-size: 24px; text-shadow: 0 0 5px rgba(0,0,0,0.3); background: white; border: 2px solid ${color}; border-radius: 50%; padding: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                ${logo}
+                ${count > 1 ? `<span class="absolute -top-2 -right-2 transform scale-x-[-1] bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">${count}</span>` : ''}
+               </div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+  }
 
   onMount(() => {
     const center = user.homeLocation || { lat: 51.165691, lng: 10.451526 };
@@ -53,7 +58,7 @@
     if (user.warehouseLocation) {
         L.marker([user.warehouseLocation.lat, user.warehouseLocation.lng], { icon: warehouseIcon })
          .addTo(map)
-         .bindPopup('<b class="text-slate-900">Lokales KoalaShip Verteilzentrum</b>');
+         .bindPopup('<b class="text-slate-900">Zentrales Verteilzentrum</b>');
     }
 
     const interval = setInterval(() => {
@@ -62,18 +67,9 @@
 
     updateTracking();
     autoFitBounds();
-    loadRoutes();
 
     return () => clearInterval(interval);
   });
-
-  async function loadRoutes() {
-      if (!user.warehouseLocation || !user.homeLocation) return;
-      const activeOrders = orders.filter(order => order.status === 'OUT_FOR_DELIVERY' && !order.routePolyline);
-      if (activeOrders.length === 0) return;
-      const route = await fetchOsrmRoute(user.warehouseLocation, user.homeLocation);
-      if (route) activeOrders.forEach(order => order.routePolyline = route);
-  }
   
   $effect(() => {
       if (themeState.current && map) {
@@ -103,7 +99,6 @@
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
   }
 
-  // Calculate position along a polyline given a progress 0..1
   function getPositionAlongPolyline(points: LatLng[], progress: number): LatLng {
       if (points.length === 0) return {lat: 0, lng: 0};
       if (points.length === 1) return points[0];
@@ -124,7 +119,6 @@
 
       for (let i = 0; i < dists.length; i++) {
           if (currDist + dists[i] >= targetDist) {
-              // Found the segment
               const segmentProgress = (targetDist - currDist) / dists[i];
               const lat = points[i].lat + (points[i+1].lat - points[i].lat) * segmentProgress;
               const lng = points[i].lng + (points[i+1].lng - points[i].lng) * segmentProgress;
@@ -139,68 +133,77 @@
     if (!map) return;
     
     const now = Date.now();
-    // Only show LOCAL_SORTING (at warehouse) and OUT_FOR_DELIVERY (moving)
     const activeOrders = orders.filter(o => o.status === 'LOCAL_SORTING' || o.status === 'OUT_FOR_DELIVERY');
     activeOrderCount = activeOrders.length;
 
-    const activeIds = activeOrders.map(o => o.id);
+    // Group by carrierId
+    const carrierGroups: Record<string, Order[]> = {};
+    for (const order of activeOrders) {
+        const cId = order.carrierId || 'koala_express';
+        if (!carrierGroups[cId]) carrierGroups[cId] = [];
+        carrierGroups[cId].push(order);
+    }
+
+    const activeCarrierIds = Object.keys(carrierGroups);
     for (const id in truckMarkers) {
-        if (!activeIds.includes(id)) {
+        if (!activeCarrierIds.includes(id)) {
             map.removeLayer(truckMarkers[id]);
             delete truckMarkers[id];
         }
     }
     for (const id in polylines) {
-        if (!activeIds.includes(id) || orders.find(o=>o.id===id)?.status !== 'OUT_FOR_DELIVERY') {
+        if (!activeCarrierIds.includes(id) || !carrierGroups[id].some(o => o.status === 'OUT_FOR_DELIVERY')) {
             map.removeLayer(polylines[id]);
             delete polylines[id];
         }
     }
 
-    for (const order of activeOrders) {
+    for (const cId of activeCarrierIds) {
+        const group = carrierGroups[cId];
+        const carrier = carriers.find(c => c.id === cId)!;
+        
+        // Take the order with the furthest progress or first one
+        const representativeOrder = group.find(o => o.status === 'OUT_FOR_DELIVERY') || group[0];
         if (!user.warehouseLocation) continue;
 
-        let currentPos = user.warehouseLocation; // Default to warehouse
+        let currentPos = representativeOrder.startLocation || user.warehouseLocation;
 
-        if (order.status === 'OUT_FOR_DELIVERY') {
-            // Phase 3: Out for Delivery (80% -> 100% of total time)
-            const totalTime = order.deliveryEta - order.orderDate;
-            const phaseStartTime = order.orderDate + (totalTime * 0.8);
+        if (representativeOrder.status === 'OUT_FOR_DELIVERY') {
+            const totalTime = representativeOrder.deliveryEta - representativeOrder.orderDate;
+            const phaseStartTime = representativeOrder.orderDate + (totalTime * 0.8);
             const phaseDuration = totalTime * 0.2;
             const elapsedInPhase = now - phaseStartTime;
             const progress = Math.max(0, Math.min(1, elapsedInPhase / phaseDuration));
 
-            if (order.routePolyline && order.routePolyline.length > 0) {
-                // Draw path
-                if (!polylines[order.id]) {
-                    polylines[order.id] = L.polyline(order.routePolyline.map(p => [p.lat, p.lng]), {
-                        color: themeState.current === 'dark' ? '#6366f1' : '#4f46e5',
+            if (representativeOrder.routePolyline && representativeOrder.routePolyline.length > 0) {
+                if (!polylines[cId]) {
+                    polylines[cId] = L.polyline(representativeOrder.routePolyline.map(p => [p.lat, p.lng]), {
+                        color: carrier.color,
                         weight: 4,
-                        opacity: 0.6,
+                        opacity: 0.8,
                         dashArray: '10, 10'
                     }).addTo(map);
                 }
-                // Move along path
-                currentPos = getPositionAlongPolyline(order.routePolyline, progress);
+                currentPos = getPositionAlongPolyline(representativeOrder.routePolyline, progress);
             } else if (user.homeLocation) {
-                // Fallback direct line
                 currentPos = {
-                    lat: user.warehouseLocation.lat + (user.homeLocation.lat - user.warehouseLocation.lat) * progress,
-                    lng: user.warehouseLocation.lng + (user.homeLocation.lng - user.warehouseLocation.lng) * progress
+                    lat: currentPos.lat + (user.homeLocation.lat - currentPos.lat) * progress,
+                    lng: currentPos.lng + (user.homeLocation.lng - currentPos.lng) * progress
                 };
             }
         }
 
-        // Render Truck
-        if (truckMarkers[order.id]) {
-            truckMarkers[order.id].setLatLng([currentPos.lat, currentPos.lng]);
+        if (truckMarkers[cId]) {
+            truckMarkers[cId].setLatLng([currentPos.lat, currentPos.lng]);
+            truckMarkers[cId].setIcon(getCarrierIcon(carrier.logo, carrier.color, group.length));
         } else {
-            truckMarkers[order.id] = L.marker([currentPos.lat, currentPos.lng], { icon: koalaIcon })
+            truckMarkers[cId] = L.marker([currentPos.lat, currentPos.lng], { icon: getCarrierIcon(carrier.logo, carrier.color, group.length) })
                 .addTo(map)
-                .bindPopup(`<b class="text-slate-900">Paket: ${order.id.split('-')[0]}</b><br/><span class="text-slate-600 text-xs">Status: ${order.status}</span>`);
+                .bindPopup(`<b class="text-slate-900">${carrier.name}</b><br/><span class="text-slate-600 text-xs">Liefert ${group.length} Paket(e)</span>`);
         }
     }
   }
+
 </script>
 
 <div class="space-y-6 flex flex-col h-[80vh]">
@@ -216,7 +219,7 @@
     <div class="grid gap-3 sm:grid-cols-2">
       {#each deliveryOrders as order}
         <div class="rounded-2xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950">
-          <div class="flex justify-between"><strong>Paket {order.id.split('-')[0]}</strong><span class="font-black text-indigo-600">ca. {order.estimatedStops ?? 12} Stopps</span></div>
+          <div class="flex justify-between"><strong>Paket {order.id.split('-')[0]}</strong><span class="font-black text-indigo-600">{order.estimatedStops === 0 ? 'Kurier in der Nähe' : `ca. ${order.estimatedStops ?? 12} Stopps`}</span></div>
           <p class="mt-1 text-sm">Zeitfenster: {new Date(order.deliveryEta - 30 * 60 * 1000).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}–{new Date(order.deliveryEta + 30 * 60 * 1000).toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})}</p>
           <p class="mt-1 text-xs text-slate-500">Letzte Aktualisierung: {new Date(order.lastTrackingUpdate ?? Date.now()).toLocaleTimeString('de-DE')}</p>
         </div>
