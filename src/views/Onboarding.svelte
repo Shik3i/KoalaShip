@@ -23,11 +23,20 @@
   let favoriteCategory = $state<'LUXURY' | 'EVERYDAY' | 'ABSURD' | 'MYSTERY'>('EVERYDAY');
   let deliveryNote = $state('');
   let avatarColor = $state('#4f46e5');
-  const randomProfiles = [
-    { name: 'Mika', pronouns: 'keine Angabe', bio: 'Mag Technik, gemütliche Räume und viel zu lange Produktvergleiche.', job: 'Übersetzt Anforderungen in Tabellen, Calls und gelegentlich funktionierenden Code.', note: 'Bitte am gewählten Ablageort abstellen.' },
-    { name: 'Nova', pronouns: 'sie/ihr', bio: 'Baut sich hier das Traum-Setup zusammen, das draußen noch warten muss.', job: 'Plant digitale Kampagnen und nennt spontane Ideen strategische Initiativen.', note: 'Wenn niemand reagiert: bei der simulierten Packstation abgeben.' },
-    { name: 'Robin', pronouns: 'they/them', bio: 'Sammelt schöne Dinge, absurde Technik und Möbel für virtuelle Wohnungen.', job: 'Hält Systeme am Laufen und erklärt nebenbei, warum ein Neustart geholfen hat.', note: 'Klingeln ist optional, Zustellen nicht.' }
-  ];
+  const randomProfiles = {
+    DE: [
+      { name: 'Mika', pronouns: 'keine Angabe', bio: 'Mag Technik, gemütliche Räume und viel zu lange Produktvergleiche.', job: 'Übersetzt Anforderungen in Tabellen, Calls und gelegentlich funktionierenden Code.', note: 'Bitte am gewählten Ablageort abstellen.' },
+      { name: 'Nova', pronouns: 'sie/ihr', bio: 'Baut sich hier das Traum-Setup zusammen, das draußen noch warten muss.', job: 'Plant digitale Kampagnen und nennt spontane Ideen strategische Initiativen.', note: 'Wenn niemand reagiert: bei der simulierten Packstation abgeben.' }
+    ],
+    EN: [
+      { name: 'Mika', pronouns: 'not specified', bio: 'Likes technology, cozy rooms and product comparisons that take far too long.', job: 'Turns requirements into spreadsheets, meetings and occasionally working code.', note: 'Please leave it at the selected safe place.' },
+      { name: 'Nova', pronouns: 'she/her', bio: 'Building the dream setup that still has to wait outside KoalaShip.', job: 'Plans digital campaigns and calls spontaneous ideas strategic initiatives.', note: 'If nobody answers, use the simulated pickup station.' }
+    ],
+    ES: [
+      { name: 'Mika', pronouns: 'sin especificar', bio: 'Le gustan la tecnología, los espacios acogedores y comparar productos durante demasiado tiempo.', job: 'Convierte requisitos en tablas, reuniones y, a veces, código que funciona.', note: 'Déjalo en el lugar seguro seleccionado.' },
+      { name: 'Nova', pronouns: 'ella', bio: 'Está creando el equipo de sus sueños que fuera de KoalaShip todavía debe esperar.', job: 'Planifica campañas digitales y llama iniciativas estratégicas a las ideas espontáneas.', note: 'Si nadie responde, usa el punto de recogida simulado.' }
+    ]
+  };
 
   const languages: { locale: Locale; flag: string; label: string }[] = [
     { locale: 'DE', flag: '🇩🇪', label: 'Deutsch' },
@@ -73,7 +82,8 @@
   }
 
   function randomizeProfile() {
-    const profile = randomProfiles[Math.floor(Math.random() * randomProfiles.length)];
+    const profiles = randomProfiles[i18nState.locale];
+    const profile = profiles[Math.floor(Math.random() * profiles.length)];
     name = profile.name;
     pronouns = profile.pronouns;
     bio = profile.bio;
@@ -100,9 +110,9 @@
 <div class="flex flex-col items-center justify-center min-h-screen p-6 relative">
   <div class="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-2xl flex flex-col gap-8">
     <button onclick={randomizeProfile} class="self-end rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 font-black text-white shadow-lg">
-      Alles zufällig ausfüllen
+      {t('onboarding.randomize')}
     </button>
-    <div class="flex flex-wrap justify-center gap-2" aria-label="Sprache auswählen">
+    <div class="flex flex-wrap justify-center gap-2" aria-label={t('onboarding.language')}>
       {#each languages as language}
         <button
           onclick={() => setLocale(language.locale)}
@@ -156,7 +166,7 @@
           <label class="cursor-pointer group">
             <input type="radio" name="job" value={preset.id} bind:group={selectedJobId} class="hidden peer" />
             <div class="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-900/20 transition-all">
-              <h3 class="font-bold text-slate-900 dark:text-white">{preset.title}</h3>
+              <h3 class="font-bold text-slate-900 dark:text-white">{t(`job.${preset.id}`)}</h3>
               <div class="flex items-center gap-1 mt-1">
                   <CoinIcon class="w-4 h-4" />
                   <p class="text-indigo-600 dark:text-indigo-400 font-medium text-sm">{preset.salary.toLocaleString()} / {preset.interval === 'WEEKLY' ? t('onboarding.week') : t('onboarding.month')}</p>
@@ -204,8 +214,8 @@
     </button>
 
     <div class="flex flex-wrap justify-center gap-4 text-xs font-bold text-slate-500">
-      <button onclick={() => navigateTo('IMPRINT')} class="hover:text-indigo-500">Imprint / Impressum</button>
-      <button onclick={() => navigateTo('PRIVACY')} class="hover:text-indigo-500">Privacy / Datenschutz</button>
+      <button onclick={() => navigateTo('IMPRINT')} class="hover:text-indigo-500">{t('onboarding.imprint')}</button>
+      <button onclick={() => navigateTo('PRIVACY')} class="hover:text-indigo-500">{t('onboarding.privacy')}</button>
     </div>
   </div>
 </div>
