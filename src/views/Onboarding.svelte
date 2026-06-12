@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { jobPresets, completeOnboarding } from '../lib/store.svelte';
   import { navigateTo } from '../lib/router.svelte';
+  import { t } from '../lib/i18n.svelte';
+  import CoinIcon from '../components/CoinIcon.svelte';
   import L from 'leaflet';
   import 'leaflet/dist/leaflet.css';
 
@@ -24,8 +26,8 @@
 
     map = L.map(mapContainer).setView([51.165691, 10.451526], 6); // default germany
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
     map.on('click', (e: L.LeafletMouseEvent) => {
@@ -49,53 +51,58 @@
   }
 </script>
 
-<div class="flex flex-col items-center justify-center min-h-screen p-6 bg-[#050510] relative">
-  <div class="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-indigo-900/20"></div>
+<div class="flex flex-col items-center justify-center min-h-screen p-6 relative">
+  <div class="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-8 shadow-2xl flex flex-col gap-8">
+    
+    <div class="text-center space-y-2">
+        <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+        {t('onboarding.title')}
+        </h2>
+        <p class="text-slate-500 dark:text-slate-400">Erstelle deinen Account und erhalte 5.000 <CoinIcon class="w-4 h-4 inline" /> Startbonus.</p>
+    </div>
 
-  <div class="relative z-10 w-full max-w-2xl bg-[#0a0a1a] border border-indigo-500/30 rounded-2xl p-8 shadow-[0_0_40px_rgba(79,70,229,0.15)] flex flex-col gap-6">
-    <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-500 tracking-widest uppercase text-center mb-4">
-      System-Initialisierung
-    </h2>
-
-    <div class="space-y-2">
-      <label class="text-indigo-400 font-mono text-sm uppercase">Alias / Name</label>
+    <div class="space-y-3">
+      <label class="text-slate-700 dark:text-slate-300 font-bold text-sm">Vorname / Alias</label>
       <input 
         type="text" 
         bind:value={name} 
-        placeholder="z.B. CyberKoala99"
-        class="w-full bg-[#101025] border border-slate-700 text-white p-4 rounded-xl focus:outline-none focus:border-purple-500 transition-colors font-mono"
+        placeholder="z.B. Max Mustermann"
+        class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
       />
     </div>
 
-    <div class="space-y-2">
-      <label class="text-indigo-400 font-mono text-sm uppercase">Berufs-Profil (Einkommen)</label>
+    <div class="space-y-3">
+      <label class="text-slate-700 dark:text-slate-300 font-bold text-sm">Berufs-Profil (Einkommen)</label>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {#each jobPresets as preset}
-          <label class="cursor-pointer">
+          <label class="cursor-pointer group">
             <input type="radio" name="job" value={preset.id} bind:group={selectedJobId} class="hidden peer" />
-            <div class="p-4 rounded-xl border border-slate-700 bg-[#101025] peer-checked:border-purple-500 peer-checked:bg-purple-900/20 peer-checked:shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all">
-              <h3 class="font-bold text-slate-200">{preset.title}</h3>
-              <p class="text-emerald-400 font-mono mt-1">{preset.salary} DC / {preset.interval === 'WEEKLY' ? 'Woche' : 'Monat'}</p>
+            <div class="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 dark:peer-checked:bg-indigo-900/20 transition-all">
+              <h3 class="font-bold text-slate-900 dark:text-white">{preset.title}</h3>
+              <div class="flex items-center gap-1 mt-1">
+                  <CoinIcon class="w-4 h-4" />
+                  <p class="text-indigo-600 dark:text-indigo-400 font-medium text-sm">{preset.salary.toLocaleString('de-DE')} / {preset.interval === 'WEEKLY' ? 'Woche' : 'Monat'}</p>
+              </div>
             </div>
           </label>
         {/each}
       </div>
     </div>
 
-    <div class="space-y-2">
-      <label class="text-indigo-400 font-mono text-sm uppercase">Wohnort markieren (Klick auf Karte)</label>
-      <div bind:this={mapContainer} class="w-full h-64 rounded-xl border border-slate-700 z-0"></div>
+    <div class="space-y-3">
+      <label class="text-slate-700 dark:text-slate-300 font-bold text-sm">Lieferadresse markieren (Klick auf Karte)</label>
+      <div bind:this={mapContainer} class="w-full h-64 rounded-xl border-2 border-slate-200 dark:border-slate-700 z-0 overflow-hidden shadow-inner"></div>
       {#if !homeLat}
-        <p class="text-red-400 font-mono text-xs mt-1 animate-pulse">Bitte einen Punkt auf der Karte markieren!</p>
+        <p class="text-red-500 text-xs font-medium">Bitte eine Lieferadresse auf der Karte markieren.</p>
       {/if}
     </div>
 
     <button 
       onclick={handleComplete}
       disabled={!name || !homeLat}
-      class="mt-6 w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] cursor-pointer"
+      class="mt-4 w-full py-4 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl cursor-pointer"
     >
-      Simulation Starten 🚀
+      {t('onboarding.start')}
     </button>
   </div>
 </div>

@@ -2,6 +2,9 @@
   import { onMount } from 'svelte';
   import { user, initTicker } from './lib/store.svelte';
   import { routerState, initRouter, navigateTo } from './lib/router.svelte';
+  import { themeState, initTheme, toggleTheme } from './lib/theme.svelte';
+  import { i18nState, initI18n, setLocale, t } from './lib/i18n.svelte';
+  import CoinIcon from './components/CoinIcon.svelte';
   
   import Onboarding from './views/Onboarding.svelte';
   import Dashboard from './views/Dashboard.svelte';
@@ -10,6 +13,8 @@
   import LiveTracking from './views/LiveTracking.svelte';
 
   onMount(() => {
+    initTheme();
+    initI18n();
     initTicker();
     initRouter();
   });
@@ -24,49 +29,93 @@
   });
 
   const navItems = [
-    { route: 'DASHBOARD', label: 'Terminal', icon: '💻' },
-    { route: 'SHOP', label: 'Darknet Shop', icon: '🛒' },
-    { route: 'HISTORY', label: 'Historie', icon: '📜' },
-    { route: 'MAP', label: 'Live Radar', icon: '🗺️' }
+    { route: 'DASHBOARD', labelKey: 'nav.dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+    { route: 'SHOP', labelKey: 'nav.shop', icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' },
+    { route: 'HISTORY', labelKey: 'nav.history', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+    { route: 'MAP', labelKey: 'nav.map', icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7' }
   ];
 </script>
 
-<div class="min-h-screen flex flex-col bg-[#050510] text-slate-200 selection:bg-purple-600 selection:text-white font-sans">
+<!-- Global App Container with Dynamic Theme Classes -->
+<div class="min-h-screen flex flex-col font-sans transition-colors duration-500
+  bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-200">
+  
+  <!-- Mesh Gradient Background (Subtle & Premium) -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-[-1] opacity-60 dark:opacity-30 mix-blend-multiply dark:mix-blend-screen">
+    <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-indigo-200 to-purple-200 dark:from-indigo-900 dark:to-purple-900 blur-[100px] animate-pulse" style="animation-duration: 15s;"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-tl from-sky-200 to-emerald-200 dark:from-sky-900 dark:to-emerald-900 blur-[120px] animate-pulse" style="animation-duration: 20s;"></div>
+  </div>
   
   {#if routerState.currentRoute === 'ONBOARDING'}
     <Onboarding />
   {:else}
-    <!-- Header -->
-    <header class="bg-[#0a0a1a]/80 backdrop-blur-md border-b border-purple-500/30 sticky top-0 z-40 shadow-[0_4px_30px_rgba(147,51,234,0.15)]">
-      <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-        <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 tracking-widest uppercase flex items-center gap-3 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
-          <span class="text-4xl filter drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]">🐨</span> KoalaShip
-        </h1>
+    <!-- Premium Header / Navbar -->
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-colors duration-500">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
+        
+        <!-- Logo -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick={() => navigateTo('SHOP')}>
+          <div class="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md transform transition hover:rotate-12">
+            <span class="text-white text-xl font-bold">K</span>
+          </div>
+          <span class="text-xl font-black tracking-tight text-slate-900 dark:text-white hidden sm:block">
+            KoalaShip
+          </span>
+        </div>
         
         <!-- Desktop Nav -->
-        <nav class="hidden md:flex gap-2">
+        <nav class="hidden md:flex items-center gap-1">
             {#each navItems as item}
                 <button 
                     onclick={() => navigateTo(item.route as any)}
-                    class="px-4 py-2 rounded-xl font-bold uppercase tracking-wider text-xs transition-all flex items-center gap-2
+                    class="px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2
                         {routerState.currentRoute === item.route 
-                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]' 
-                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'}"
+                            ? 'bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400' 
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50'}"
                 >
-                    <span class="text-lg">{item.icon}</span> {item.label}
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon}/></svg>
+                    {t(item.labelKey)}
                 </button>
             {/each}
         </nav>
 
-        <a href="https://github.com/Shik3i/KoalaShip.git" target="_blank" rel="noopener noreferrer" class="group ml-4">
-          <div class="p-2 rounded-full bg-slate-800/50 border border-slate-700 group-hover:border-purple-500 transition-all duration-300 group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-            <img src="/icons/github.svg" alt="GitHub Repo" class="w-6 h-6 filter opacity-70 group-hover:opacity-100 transition-all" />
-          </div>
-        </a>
+        <!-- Right Side Tools -->
+        <div class="flex items-center gap-4">
+            <!-- Balance -->
+            <div class="hidden sm:flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 transition-colors">
+                <CoinIcon class="w-5 h-5" />
+                <span class="font-bold text-slate-800 dark:text-slate-200 font-mono">{Math.floor(user.balance).toLocaleString('de-DE')}</span>
+            </div>
+
+            <!-- Language Toggle -->
+            <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700 transition-colors">
+                {#each ['DE', 'EN', 'ES'] as lang}
+                    <button 
+                        onclick={() => setLocale(lang as any)}
+                        class="px-2 py-1 text-xs font-bold rounded-md transition-all {i18nState.locale === lang ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}"
+                    >
+                        {lang}
+                    </button>
+                {/each}
+            </div>
+
+            <!-- Theme Toggle -->
+            <button 
+                onclick={toggleTheme}
+                class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400 transition-colors"
+                aria-label="Toggle Theme"
+            >
+                {#if themeState.current === 'light'}
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                {:else}
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                {/if}
+            </button>
+        </div>
       </div>
     </header>
 
-    <main class="flex-1 w-full max-w-6xl mx-auto p-6 mt-4 pb-24 md:pb-6">
+    <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8">
       {#if routerState.currentRoute === 'DASHBOARD'}
         <Dashboard />
       {:else if routerState.currentRoute === 'SHOP'}
@@ -79,14 +128,14 @@
     </main>
 
     <!-- Mobile Nav (Bottom Bar) -->
-    <nav class="md:hidden fixed bottom-0 w-full bg-[#0a0a1a]/90 backdrop-blur-xl border-t border-purple-500/30 flex justify-around p-3 z-50 shadow-[0_-4px_30px_rgba(147,51,234,0.15)]">
+    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 flex justify-around p-2 z-50 transition-colors duration-500">
         {#each navItems as item}
             <button 
                 onclick={() => navigateTo(item.route as any)}
-                class="flex flex-col items-center gap-1 p-2 transition-colors {routerState.currentRoute === item.route ? 'text-purple-400' : 'text-slate-500'}"
+                class="flex flex-col items-center gap-1 p-2 transition-colors {routerState.currentRoute === item.route ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}"
             >
-                <span class="text-2xl">{item.icon}</span>
-                <span class="text-[10px] font-bold uppercase">{item.label}</span>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={item.icon}/></svg>
+                <span class="text-[10px] font-bold">{t(item.labelKey)}</span>
             </button>
         {/each}
     </nav>

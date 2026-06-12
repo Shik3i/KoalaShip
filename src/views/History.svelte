@@ -1,5 +1,6 @@
 <script lang="ts">
   import { orders, products, openPackage } from '../lib/store.svelte';
+  import { t } from '../lib/i18n.svelte';
   
   // Unboxing Sequence State (Local to History)
   let activeUnboxingOrderId = $state<string | null>(null);
@@ -34,42 +35,52 @@
 </script>
 
 <div class="space-y-6">
-  <div class="flex items-center gap-4">
-    <h2 class="text-2xl font-black uppercase tracking-widest text-slate-200">Bestellhistorie</h2>
-    <div class="flex-1 h-px bg-gradient-to-r from-purple-500/50 to-transparent"></div>
+  <div class="flex items-center justify-between mb-8">
+    <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{t('nav.history')}</h2>
   </div>
 
   {#if orders.length === 0}
-    <div class="p-12 text-center bg-[#101025] border border-slate-800 border-dashed rounded-2xl text-slate-500 font-mono shadow-inner">
-      <p class="text-lg">Keine Bestellungen vorhanden.</p>
+    <div class="p-16 text-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-dashed rounded-2xl shadow-sm">
+      <div class="text-5xl mb-4 opacity-50">📦</div>
+      <p class="text-lg font-bold text-slate-500 dark:text-slate-400">Keine Bestellungen vorhanden.</p>
     </div>
   {:else}
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-4">
       {#each [...orders].reverse() as order}
-        <div class="bg-[#101025] border border-slate-800 rounded-2xl p-6 relative overflow-hidden transition-all duration-500
-          {order.status === 'DELIVERED' ? 'border-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.15)] bg-yellow-900/10' : ''}
-          {order.status === 'OPENED' ? 'opacity-50 border-slate-800 bg-slate-950' : ''}
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 relative overflow-hidden transition-all duration-500 shadow-sm
+          {order.status === 'DELIVERED' ? 'border-yellow-400 dark:border-yellow-500 shadow-[0_0_20px_rgba(250,204,21,0.1)] bg-yellow-50/50 dark:bg-yellow-900/10' : ''}
+          {order.status === 'OPENED' ? 'opacity-60 bg-slate-50 dark:bg-slate-900/50' : ''}
         ">
-          <!-- Glow Line Left -->
-          <div class="absolute left-0 top-0 bottom-0 w-2
-            {order.status === 'PROCESSING' ? 'bg-orange-500 shadow-[0_0_15px_#f97316]' : ''}
-            {order.status === 'SHIPPED' ? 'bg-blue-500 shadow-[0_0_15px_#3b82f6]' : ''}
-            {order.status === 'DELIVERED' ? 'bg-yellow-400 shadow-[0_0_15px_#facc15]' : ''}
+          <!-- Status Indicator Line -->
+          <div class="absolute left-0 top-0 bottom-0 w-1.5
+            {order.status === 'PROCESSING' ? 'bg-orange-500' : ''}
+            {order.status === 'SHIPPED' ? 'bg-indigo-500' : ''}
+            {order.status === 'DELIVERED' ? 'bg-yellow-400' : ''}
             {order.status === 'OPENED' ? 'bg-emerald-500' : ''}
           "></div>
 
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-6 pl-4">
-            <div>
-              <h4 class="font-black text-white text-xl mb-1">{products.find(p => p.id === order.productId)?.name}</h4>
-              <p class="text-xs text-slate-500 font-mono tracking-wider">Tracking-ID: {order.id.split('-')[0]}</p>
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-xl flex items-center justify-center text-3xl shadow-inner">
+                 {products.find(p => p.id === order.productId)?.imageUrl}
+              </div>
+              <div>
+                <h4 class="font-black text-slate-900 dark:text-white text-xl mb-1">{products.find(p => p.id === order.productId)?.name}</h4>
+                <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono tracking-wider">
+                  <span>ID: {order.id.split('-')[0]}</span>
+                  {#if order.isExpress}
+                    <span class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded font-bold">EXPRESS</span>
+                  {/if}
+                </div>
+              </div>
             </div>
             
-            <div class="flex items-center gap-4">
-              <span class="font-mono text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-lg border
-                {order.status === 'PROCESSING' ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' : ''}
-                {order.status === 'SHIPPED' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' : ''}
-                {order.status === 'DELIVERED' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' : ''}
-                {order.status === 'OPENED' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : ''}
+            <div class="flex items-center gap-3">
+              <span class="font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-lg
+                {order.status === 'PROCESSING' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : ''}
+                {order.status === 'SHIPPED' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : ''}
+                {order.status === 'DELIVERED' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' : ''}
+                {order.status === 'OPENED' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : ''}
               ">
                 {order.status}
               </span>
@@ -77,12 +88,12 @@
           </div>
 
           <!-- Protokoll -->
-          <div class="bg-[#050510] rounded-xl p-4 font-mono text-sm space-y-3 border border-slate-800/50 shadow-inner ml-4">
+          <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-sm space-y-3 border border-slate-100 dark:border-slate-800 shadow-inner ml-4">
             {#each order.trackingSteps as step}
               <div class="flex gap-4 items-start">
-                <span class="text-indigo-400 shrink-0 opacity-70">[{new Date(step.timestamp).toLocaleTimeString()}]</span>
-                <span class="text-slate-300 {step.message.includes('DOPAMIN') ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.6)] font-bold' : ''}">
-                  > {step.message}
+                <span class="text-indigo-500 dark:text-indigo-400 shrink-0 font-mono font-bold text-xs opacity-70">[{new Date(step.timestamp).toLocaleTimeString()}]</span>
+                <span class="text-slate-700 dark:text-slate-300 font-medium {step.message.includes('DOPAMINE') ? 'text-emerald-600 dark:text-emerald-400 font-black' : ''}">
+                  {step.message}
                 </span>
               </div>
             {/each}
@@ -91,9 +102,9 @@
           {#if order.status === 'DELIVERED'}
             <button 
               onclick={() => initiateUnboxing(order.id)}
-              class="mt-6 ml-4 w-[calc(100%-1rem)] py-4 bg-gradient-to-r from-yellow-600 via-yellow-500 to-orange-500 hover:from-yellow-500 hover:via-yellow-400 hover:to-orange-400 text-slate-950 rounded-xl font-black uppercase tracking-widest transition-all duration-300 shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:shadow-[0_0_40px_rgba(234,179,8,0.7)] cursor-pointer hover:scale-[1.01] active:scale-[0.99] animate-pulse"
+              class="mt-6 ml-4 w-[calc(100%-1rem)] py-4 bg-yellow-400 hover:bg-yellow-500 text-slate-900 rounded-xl font-black uppercase tracking-widest transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer transform hover:scale-[1.01] active:scale-[0.99] flex justify-center items-center gap-2"
             >
-              Initiate Unboxing Sequence 🚀🎁
+              <span>🎁</span> Paket öffnen
             </button>
           {/if}
         </div>
@@ -108,24 +119,23 @@
   {@const activeProduct = products.find(p => p.id === activeOrder?.productId)}
   
   <div 
-    class="fixed inset-0 z-[100] bg-[#050510]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6" 
+    class="fixed inset-0 z-[100] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl flex flex-col items-center justify-center p-6" 
   >
     
     {#if unboxingClicks < 3}
       <div class="flex flex-col items-center gap-12">
-        <h2 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 drop-shadow-[0_0_20px_rgba(234,179,8,0.6)] uppercase tracking-widest text-center">
-          Smash to Open! <br/><span class="text-2xl text-white mt-4 block opacity-80">({unboxingClicks}/3 Hits)</span>
+        <h2 class="text-4xl md:text-5xl font-black text-slate-900 dark:text-white uppercase tracking-widest text-center drop-shadow-md">
+          Zum Öffnen klicken! <br/><span class="text-2xl text-slate-500 mt-4 block">({unboxingClicks}/3 Hits)</span>
         </h2>
         
         <button 
           onclick={handleBoxClick}
-          class="relative w-64 h-64 md:w-80 md:h-80 bg-gradient-to-br from-[#8B5A2B] to-[#654321] border-8 border-[#3d2711] rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.8)] flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 group {isShaking ? 'animate-[shake_0.2s_cubic-bezier(.36,.07,.19,.97)_both]' : ''}"
+          class="relative w-64 h-64 md:w-80 md:h-80 bg-[#c08d5d] border-[12px] border-[#a06f42] rounded-3xl shadow-2xl flex items-center justify-center cursor-pointer transition-transform hover:scale-105 active:scale-95 group {isShaking ? 'animate-[shake_0.2s_cubic-bezier(.36,.07,.19,.97)_both]' : ''}"
           style={isShaking ? 'animation-name: shake;' : ''}
         >
-          <div class="absolute w-full h-16 bg-[#C19A6B]/90 top-1/2 -translate-y-1/2 shadow-inner mix-blend-overlay"></div>
-          <div class="absolute w-16 h-full bg-[#C19A6B]/90 left-1/2 -translate-x-1/2 shadow-inner mix-blend-overlay"></div>
-          <span class="text-8xl md:text-9xl group-hover:scale-110 transition-transform z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">📦</span>
-          <div class="absolute inset-0 bg-yellow-500/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl"></div>
+          <div class="absolute w-full h-16 bg-[#e0b080]/90 top-1/2 -translate-y-1/2 shadow-inner mix-blend-multiply"></div>
+          <div class="absolute w-16 h-full bg-[#e0b080]/90 left-1/2 -translate-x-1/2 shadow-inner mix-blend-multiply"></div>
+          <span class="text-8xl md:text-9xl group-hover:scale-110 transition-transform z-10 drop-shadow-xl">📦</span>
         </button>
       </div>
       
@@ -133,29 +143,22 @@
       <div class="flex flex-col items-center gap-8 max-w-3xl text-center w-full">
         
         <div class="relative w-64 h-64 md:w-80 md:h-80 rounded-full flex items-center justify-center mb-6">
-          <div class="absolute inset-0 bg-gradient-to-tr from-purple-600 via-pink-500 to-indigo-500 rounded-full animate-spin" style="animation-duration: 3s;"></div>
-          <div class="absolute inset-2 bg-[#050510] rounded-full"></div>
-          <div class="absolute inset-0 rounded-full shadow-[0_0_100px_rgba(168,85,247,0.8)] animate-pulse"></div>
-          <span class="text-9xl relative z-10 drop-shadow-[0_0_30px_rgba(255,255,255,0.5)] transform hover:scale-110 transition-transform duration-500">
+          <div class="absolute inset-0 bg-gradient-to-tr from-yellow-300 to-yellow-500 rounded-full animate-spin" style="animation-duration: 4s;"></div>
+          <div class="absolute inset-2 bg-white dark:bg-slate-900 rounded-full"></div>
+          <span class="text-9xl relative z-10 drop-shadow-2xl transform hover:scale-110 transition-transform duration-500">
             {activeProduct.imageUrl}
           </span>
         </div>
         
-        <h2 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-emerald-400 to-cyan-500 drop-shadow-[0_0_20px_rgba(52,211,153,0.6)] uppercase tracking-tighter leading-tight">
+        <h2 class="text-5xl md:text-7xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-tight">
           {activeProduct.name}
         </h2>
         
-        <div class="mt-4 px-8 py-4 bg-emerald-900/30 border-2 border-emerald-500/50 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.3)] backdrop-blur-sm">
-          <p class="text-2xl md:text-3xl font-mono text-emerald-400 font-bold uppercase tracking-widest">
-            Flex-Faktor: <span class="text-white">+{Math.floor(Math.random() * 800 + 200)}%</span> 🚀
-          </p>
-        </div>
-        
         <button 
           onclick={closeUnboxing}
-          class="mt-12 px-12 py-5 bg-slate-900 hover:bg-slate-800 text-white border-2 border-slate-700 hover:border-emerald-500 rounded-2xl uppercase font-black tracking-widest transition-all duration-300 hover:shadow-[0_0_40px_rgba(16,185,129,0.5)] cursor-pointer text-lg hover:text-emerald-400"
+          class="mt-12 px-12 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl uppercase font-black tracking-widest transition-all duration-300 hover:shadow-xl cursor-pointer text-lg"
         >
-          Dopamin eingesackt (Schließen)
+          {t('common.close')}
         </button>
       </div>
     {/if}

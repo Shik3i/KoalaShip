@@ -1,44 +1,175 @@
 <script lang="ts">
   import { user, products, purchaseProduct } from '../lib/store.svelte';
+  import { t } from '../lib/i18n.svelte';
+  import CoinIcon from '../components/CoinIcon.svelte';
+
+  // State for Buy Slam / Loading
+  let buyingProductId = $state<string | null>(null);
+  let buyStatus = $state<'authorizing' | 'done'>('authorizing');
+  
+  // State for Express Shipping
+  let isExpress = $state(false);
+
+  // State for Reviews Modal
+  let selectedProduct = $state<typeof products[0] | null>(null);
+
+  function handleBuy(productId: string) {
+      buyingProductId = productId;
+      buyStatus = 'authorizing';
+      
+      setTimeout(() => {
+          purchaseProduct(productId, isExpress);
+          buyStatus = 'done';
+          setTimeout(() => {
+              buyingProductId = null;
+          }, 1500);
+      }, 1000);
+  }
+
+  function getStars(rating: number) {
+      const full = Math.floor(rating);
+      const half = rating % 1 >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return '★'.repeat(full) + (half ? '⯨' : '') + '☆'.repeat(empty);
+  }
 </script>
 
 <div class="space-y-6">
-  <div class="flex items-center gap-4">
-    <h2 class="text-2xl font-black uppercase tracking-widest text-slate-200">Darknet Market</h2>
-    <div class="flex-1 h-px bg-gradient-to-r from-indigo-500/50 to-transparent"></div>
+  <div class="flex items-center justify-between mb-8">
+    <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{t('shop.title')}</h2>
+    
+    <!-- Global Express Toggle -->
+    <label class="flex items-center gap-3 cursor-pointer bg-white dark:bg-slate-800 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
+        <div class="relative">
+            <input type="checkbox" bind:checked={isExpress} class="sr-only" />
+            <div class="block bg-slate-200 dark:bg-slate-700 w-10 h-6 rounded-full transition-colors {isExpress ? 'bg-indigo-500 dark:bg-indigo-500' : ''}"></div>
+            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform {isExpress ? 'transform translate-x-4' : ''}"></div>
+        </div>
+        <div class="flex flex-col">
+            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{isExpress ? t('shop.express') : t('shop.standard')}</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400">Halbiert die Lieferzeit</span>
+        </div>
+    </label>
   </div>
   
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     {#each products as product}
-      <div class="group relative bg-[#101025] border border-slate-800 hover:border-purple-500/50 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 flex flex-col
-        {user.balance >= product.price ? 'shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:shadow-[0_15px_40px_rgba(168,85,247,0.2)]' : 'opacity-80 grayscale-[20%]'}
-      ">
+      {@const totalCost = product.price + (isExpress ? 50 : 0)}
+      {@const canAfford = user.balance >= totalCost}
+      {@const isBuying = buyingProductId === product.id}
+
+      <div class="group flex flex-col bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
         
-        <div class="w-full h-40 bg-slate-900/50 border border-slate-800 rounded-xl mb-6 flex items-center justify-center text-7xl shadow-inner group-hover:scale-105 transition-transform duration-500 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-b from-transparent to-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <span class="relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">{product.imageUrl}</span>
+        <!-- Image Area -->
+        <div class="w-full aspect-square bg-slate-50 dark:bg-slate-900 rounded-xl mb-4 flex items-center justify-center text-8xl shadow-inner relative overflow-hidden group-hover:scale-[1.02] transition-transform">
+          <span class="relative z-10 drop-shadow-md">{product.imageUrl}</span>
+          <!-- Fake Prime Badge -->
+          <div class="absolute top-3 left-3 bg-indigo-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            PRIME
+          </div>
         </div>
         
-        <div class="flex justify-between items-start mb-2">
-          <h3 class="text-xl font-bold text-white leading-tight">{product.name}</h3>
-          <span class="text-[10px] font-mono font-bold tracking-widest px-2 py-1 bg-slate-800 text-slate-400 rounded border border-slate-700">{product.category}</span>
+        <!-- Content Area -->
+        <div class="flex-1 flex flex-col">
+            <div class="flex justify-between items-start mb-1">
+                <span class="text-[10px] font-bold tracking-widest text-indigo-600 dark:text-indigo-400 uppercase">{product.category}</span>
+                <button 
+                    onclick={() => selectedProduct = product}
+                    class="flex items-center gap-1 text-xs text-yellow-500 hover:text-yellow-600 transition-colors"
+                >
+                    {getStars(product.rating)} <span class="text-slate-500 dark:text-slate-400 underline">({product.reviews.length})</span>
+                </button>
+            </div>
+            
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight mb-4">{product.name}</h3>
+            
+            <div class="mt-auto flex items-end justify-between mb-4">
+                <div class="flex items-center gap-1.5">
+                    <CoinIcon class="w-6 h-6" />
+                    <span class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                        {totalCost.toLocaleString('de-DE')}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Buy Button Slam -->
+            {#if isBuying}
+                {#if buyStatus === 'authorizing'}
+                    <button disabled class="w-full py-3 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold flex items-center justify-center gap-2">
+                        <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {t('shop.authorizing')}
+                    </button>
+                {:else}
+                    <button disabled class="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transform scale-105 transition-transform">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                        {t('shop.ordered')}
+                    </button>
+                {/if}
+            {:else}
+                <button 
+                    onclick={() => handleBuy(product.id)}
+                    disabled={!canAfford}
+                    class="w-full py-3 rounded-xl font-bold transition-all duration-200 shadow-sm
+                        {canAfford 
+                            ? 'bg-yellow-400 hover:bg-yellow-500 text-slate-900 hover:shadow-md active:scale-95' 
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'}"
+                >
+                    {canAfford ? t('shop.buy') : t('shop.outofstock')}
+                </button>
+            {/if}
         </div>
-        
-        <p class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)] mb-8">
-          {product.price.toLocaleString('de-DE')} DC
-        </p>
-        
-        <button 
-          onclick={() => purchaseProduct(product.id)}
-          disabled={user.balance < product.price}
-          class="mt-auto w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all duration-300 cursor-pointer disabled:cursor-not-allowed
-            {user.balance >= product.price 
-              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] hover:scale-[1.02] active:scale-95' 
-              : 'bg-slate-800 text-slate-500 border border-slate-700'}"
-        >
-          {user.balance >= product.price ? 'Kaufen 🛒' : 'Broke 💀'}
-        </button>
       </div>
     {/each}
   </div>
 </div>
+
+<!-- Reviews Modal -->
+{#if selectedProduct}
+  <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+          <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>{selectedProduct.imageUrl}</span> {t('shop.reviews')}
+              </h3>
+              <button onclick={() => selectedProduct = null} class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+          </div>
+          
+          <div class="p-6 overflow-y-auto space-y-6">
+              <div class="flex items-center gap-4 mb-2">
+                  <div class="text-5xl font-black text-slate-900 dark:text-white">{selectedProduct.rating.toFixed(1)}</div>
+                  <div class="flex flex-col">
+                      <div class="text-yellow-500 text-xl">{getStars(selectedProduct.rating)}</div>
+                      <span class="text-sm text-slate-500 dark:text-slate-400">Basierend auf {selectedProduct.reviews.length} globalen Bewertungen</span>
+                  </div>
+              </div>
+              
+              <hr class="border-slate-200 dark:border-slate-700" />
+              
+              {#each selectedProduct.reviews as review}
+                  <div class="space-y-1">
+                      <div class="flex items-center gap-2">
+                          <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                              {review.author[0]}
+                          </div>
+                          <span class="font-bold text-slate-900 dark:text-white">{review.author}</span>
+                      </div>
+                      <div class="text-yellow-500 text-sm">{getStars(review.rating)}</div>
+                      <p class="text-slate-600 dark:text-slate-300 text-sm italic">"{review.text}"</p>
+                  </div>
+              {/each}
+          </div>
+          
+          <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+              <button onclick={() => selectedProduct = null} class="w-full py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-lg font-bold transition-colors">
+                  {t('common.close')}
+              </button>
+          </div>
+      </div>
+  </div>
+{/if}

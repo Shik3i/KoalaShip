@@ -27,11 +27,15 @@ export const user = $state<UserProfile>({
 });
 
 export const products = $state<Product[]>([
-    { id: 'p_1', name: 'Rolex aus Knetmasse', price: 5000, category: 'LUXURY', imageUrl: '⌚' },
-    { id: 'p_2', name: 'Eine Dose frische Luft', price: 50, category: 'ABSURD', imageUrl: '💨' },
-    { id: 'p_3', name: 'Standard-Toilettenpapier', price: 5, category: 'EVERYDAY', imageUrl: '🧻' },
-    { id: 'p_4', name: 'Cyberpunk Implantat (defekt)', price: 15000, category: 'LUXURY', imageUrl: '🦾' },
-    { id: 'p_5', name: 'Premium Eukalyptus', price: 200, category: 'EVERYDAY', imageUrl: '🌿' }
+    { id: 'p_1', name: 'KoalaPad Pro Max', price: 1200, category: 'LUXURY', imageUrl: '📱', rating: 4.8, reviews: [{author: 'TechGuru', text: 'Bestes Tablet, mein Koala wischt stundenlang.', rating: 5}, {author: 'Hater99', text: 'Akku hält nur 20 Stunden.', rating: 4}] },
+    { id: 'p_2', name: 'Noise-Cancelling Eukalyptus', price: 350, category: 'EVERYDAY', imageUrl: '🎧', rating: 4.5, reviews: [{author: 'Sleepy', text: 'Endlich Ruhe beim Kauen.', rating: 5}] },
+    { id: 'p_3', name: 'Smartwatch (Knetmasse Edition)', price: 4500, category: 'LUXURY', imageUrl: '⌚', rating: 3.2, reviews: [{author: 'RolexFan', text: 'Sieht täuschend echt aus.', rating: 4}, {author: 'RegenOpfer', text: 'Ist im Regen geschmolzen.', rating: 1}] },
+    { id: 'p_4', name: 'Dose frische Luft (Alpen)', price: 80, category: 'ABSURD', imageUrl: '💨', rating: 4.9, reviews: [{author: 'BreathIn', text: 'Schmeckt nach Bergen.', rating: 5}] },
+    { id: 'p_5', name: 'Standard-Toilettenpapier', price: 5, category: 'EVERYDAY', imageUrl: '🧻', rating: 4.0, reviews: [{author: 'Kunde', text: 'Tut was es soll.', rating: 4}] },
+    { id: 'p_6', name: 'Cyber-Implantat (defekt)', price: 15000, category: 'LUXURY', imageUrl: '🦾', rating: 2.1, reviews: [{author: 'Edgerunner', text: 'Zuckt manchmal unkontrolliert.', rating: 2}] },
+    { id: 'p_7', name: 'Eigene Raumstation (Orbital)', price: 2500000, category: 'ABSURD', imageUrl: '🛰️', rating: 5.0, reviews: [{author: 'Elon M.', text: 'Gutes Preis-Leistungs-Verhältnis.', rating: 5}, {author: 'Astronaut', text: 'Etwas zugig im Bad.', rating: 4}] },
+    { id: 'p_8', name: 'Gaming-Stuhl (RGB)', price: 400, category: 'EVERYDAY', imageUrl: '🪑', rating: 4.6, reviews: [{author: 'GamerGirl', text: 'Leuchtet in 16 Mio Farben.', rating: 5}] },
+    { id: 'p_9', name: 'Virtueller NFT Koala', price: 8000, category: 'ABSURD', imageUrl: '🖼️', rating: 1.0, reviews: [{author: 'CryptoBro', text: 'To the moon! (Wert ist auf 0 gefallen)', rating: 1}] }
 ]);
 
 export const orders = $state<Order[]>([]);
@@ -65,8 +69,8 @@ export function completeOnboarding(name: string, job: JobPreset, homeLat: number
         lng: homeLng + Math.sin(angle) * distanceDegree
     };
     
-    // Initial salary payout
-    user.balance = job.salary;
+    // Starting Capital (5000 KC) as requested
+    user.balance = 5000;
     user.lastSalaryPayment = Date.now();
     saveState();
 }
@@ -82,22 +86,27 @@ export function switchMode() {
     saveState();
 }
 
-export function purchaseProduct(productId: string) {
+export function purchaseProduct(productId: string, isExpress: boolean = false) {
     const product = products.find(p => p.id === productId);
     if (!product) return console.error('Produkt nicht gefunden');
-    if (user.balance < product.price) return console.warn('Nicht genug Dopamin-Coins!');
+    
+    const totalCost = product.price + (isExpress ? 50 : 0);
+    if (user.balance < totalCost) return console.warn('Nicht genug KoalaCoins!');
 
-    user.balance -= product.price;
+    user.balance -= totalCost;
 
     const now = Date.now();
     const isDemo = user.mode === 'DEMO';
-    const delay = isDemo ? 30 * 1000 : 2 * 24 * 60 * 60 * 1000;
+    let delay = isDemo ? 30 * 1000 : 2 * 24 * 60 * 60 * 1000;
+    
+    if (isExpress) {
+        delay = delay / 2;
+    }
 
     const startMessages = [
-        'Der Koala-Kurier hat dein Paket mit Premium-Blättern poliert.',
-        'Paket wurde im System erfasst – der Hamster im Laufrad gibt alles!',
-        'Ein Eukalyptus-Experte schnürt dein Paket gerade liebevoll zusammen.',
-        'Das Dopamin-Kontingent wurde reserviert. Dein Paket wird verpackt.'
+        'Bestellung wird in KoalaShip Logistikzentrum bearbeitet.',
+        'Zahlung erhalten. Versand wird vorbereitet.',
+        'Artikel verpackt und an den Kurier übergeben.'
     ];
     const randomStartMsg = startMessages[Math.floor(Math.random() * startMessages.length)];
 
@@ -109,6 +118,7 @@ export function purchaseProduct(productId: string) {
         mode: user.mode,
         deliveryEta: now + delay,
         startLocation: user.warehouseLocation ? { ...user.warehouseLocation } : undefined,
+        isExpress,
         trackingSteps: [
             { timestamp: now, message: randomStartMsg }
         ]

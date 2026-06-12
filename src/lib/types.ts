@@ -36,6 +36,8 @@ export interface Product {
     price: number;
     category: ProductCategory;
     imageUrl: string;
+    rating: number; // e.g. 4.5
+    reviews: { author: string; text: string; rating: number }[];
 }
 
 export type OrderStatus = 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'OPENED';
@@ -53,5 +55,6 @@ export interface Order {
     mode: GameMode;    
     deliveryEta: number; // ETA als Unix Timestamp
     startLocation?: LatLng; // Map-Tracking
+    isExpress?: boolean;
     trackingSteps: TrackingStep[];
 }

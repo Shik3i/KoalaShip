@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { user, addFunds, switchMode, resetUser } from '../lib/store.svelte';
+  import { user, switchMode, resetUser } from '../lib/store.svelte';
   import { navigateTo } from '../lib/router.svelte';
+  import { t } from '../lib/i18n.svelte';
+  import CoinIcon from '../components/CoinIcon.svelte';
   
   function formatTimeRemaining(ms: number) {
     if (ms <= 0) return '0s';
@@ -52,64 +54,67 @@
 </script>
 
 <div class="space-y-6">
-  <div class="flex items-center gap-4">
-    <h2 class="text-2xl font-black uppercase tracking-widest text-slate-200">Terminal</h2>
-    <div class="flex-1 h-px bg-gradient-to-r from-purple-500/50 to-transparent"></div>
+  <div class="flex items-center justify-between mb-8">
+    <h2 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{t('nav.dashboard')}</h2>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <!-- User Card -->
-    <div class="relative bg-gradient-to-br from-[#101025] to-[#0a0a15] border border-indigo-500/30 rounded-2xl p-8 shadow-[0_0_40px_rgba(79,70,229,0.15)] overflow-hidden group">
-      <div class="absolute -top-24 -right-24 w-64 h-64 bg-purple-600/20 rounded-full blur-[80px] pointer-events-none group-hover:bg-indigo-500/30 transition-colors duration-700"></div>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-6 relative overflow-hidden">
+        <!-- Decoration -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/20 rounded-bl-full -z-0"></div>
 
-      <div class="relative z-10 flex flex-col gap-6">
-        <div class="flex justify-between items-start">
+        <div class="relative z-10 flex justify-between items-start">
             <div class="flex flex-col gap-1">
-                <span class="text-indigo-400 font-mono text-sm tracking-widest uppercase opacity-80">Profil</span>
-                <span class="text-2xl font-black text-white tracking-wider">{user.name || 'Unbekannt'}</span>
-                <span class="text-emerald-400 font-mono text-sm">{user.occupation?.title || 'Arbeitslos'}</span>
+                <span class="text-indigo-600 dark:text-indigo-400 font-bold text-xs tracking-widest uppercase">Profil</span>
+                <span class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{user.name || 'Unbekannt'}</span>
+                <span class="text-slate-500 dark:text-slate-400 font-medium">{user.occupation?.title || 'Arbeitslos'}</span>
             </div>
             
-            <button onclick={handleReset} class="text-xs font-mono text-slate-500 hover:text-red-400 transition-colors">
-                [RESET]
+            <button onclick={handleReset} class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors px-2 py-1 bg-slate-50 dark:bg-slate-900 rounded-md">
+                RESET
             </button>
         </div>
 
-        <div class="flex flex-col gap-1">
-          <span class="text-indigo-400 font-mono text-sm tracking-widest uppercase opacity-80">Liquidität (DC)</span>
-          <div class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]">
-            {Math.floor(user.balance).toLocaleString('de-DE')}
+        <div class="relative z-10 flex flex-col gap-2 mt-4">
+          <span class="text-slate-500 dark:text-slate-400 font-bold text-sm tracking-widest uppercase">{t('dashboard.balance')}</span>
+          <div class="flex items-center gap-3">
+              <CoinIcon class="w-10 h-10" />
+              <div class="text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+                {Math.floor(user.balance).toLocaleString('de-DE')}
+              </div>
           </div>
         </div>
 
         <!-- Mode Toggles -->
-        <div class="flex flex-col gap-1 mt-2 border-t border-slate-800 pt-4">
-            <div class="flex justify-between items-center">
-                <span class="text-slate-400 font-mono text-sm uppercase">Simulationsmodus</span>
-                <span class="font-black {user.mode === 'DEMO' ? 'text-pink-500' : 'text-yellow-400'}">{user.mode}</span>
+        <div class="relative z-10 flex flex-col gap-1 mt-auto border-t border-slate-100 dark:border-slate-700 pt-6">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase">Simulationsmodus</span>
+                <span class="font-black px-2 py-1 rounded bg-slate-100 dark:bg-slate-900 text-xs {user.mode === 'DEMO' ? 'text-indigo-600 dark:text-indigo-400' : 'text-emerald-600 dark:text-emerald-400'}">{user.mode}</span>
             </div>
-            <button onclick={switchMode} class="mt-2 w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-md text-xs font-bold uppercase transition-all shadow-md">
+            <button onclick={switchMode} class="w-full py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-sm font-bold transition-all shadow-sm text-slate-700 dark:text-slate-300">
                 Modus wechseln
             </button>
         </div>
-      </div>
     </div>
 
     <!-- Income Tracker -->
-    <div class="relative bg-gradient-to-br from-[#101025] to-[#0a0a15] border border-emerald-500/30 rounded-2xl p-8 shadow-[0_0_40px_rgba(16,185,129,0.15)] overflow-hidden group">
-        <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-600/20 rounded-full blur-[80px] pointer-events-none group-hover:bg-cyan-500/30 transition-colors duration-700"></div>
+    <div class="bg-gradient-to-br from-indigo-600 to-purple-600 dark:from-indigo-900 dark:to-purple-900 rounded-2xl p-8 shadow-md flex flex-col gap-6 relative overflow-hidden text-white">
+        <!-- Decoration -->
+        <div class="absolute -bottom-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
 
-        <div class="relative z-10 flex flex-col gap-6 h-full justify-between">
-            <div class="flex flex-col gap-1">
-                <span class="text-emerald-400 font-mono text-sm tracking-widest uppercase opacity-80">Nächste Gehaltszahlung</span>
-                <div class="text-4xl font-black text-white mt-2">
-                    In {formatTimeRemaining(nextSalaryRemaining)}
-                </div>
+        <div class="relative z-10 flex flex-col gap-2 h-full justify-center">
+            <span class="text-indigo-200 font-bold text-sm tracking-widest uppercase">{t('dashboard.next_salary')}</span>
+            <div class="text-5xl md:text-6xl font-black mt-2 tracking-tight">
+                {formatTimeRemaining(nextSalaryRemaining)}
             </div>
+        </div>
 
-            <div class="flex flex-col gap-1 border-l-2 border-emerald-500/50 pl-4 mt-auto">
-                <span class="text-slate-400 font-mono text-sm uppercase">Erwarteter Eingang</span>
-                <span class="text-2xl font-black text-emerald-400">+{user.occupation?.salary?.toLocaleString('de-DE') || 0} DC</span>
+        <div class="relative z-10 flex flex-col gap-1 bg-white/10 backdrop-blur-sm rounded-xl p-4 mt-auto border border-white/20">
+            <span class="text-indigo-200 font-bold text-xs uppercase">Erwarteter Eingang</span>
+            <div class="flex items-center gap-2">
+                <CoinIcon class="w-6 h-6 grayscale brightness-200" />
+                <span class="text-3xl font-black">+{user.occupation?.salary?.toLocaleString('de-DE') || 0}</span>
             </div>
         </div>
     </div>
