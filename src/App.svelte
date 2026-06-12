@@ -189,7 +189,7 @@
     </footer>
 
     <!-- Mobile Nav (Bottom Bar) -->
-    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 flex justify-around p-2 z-50 transition-colors duration-500">
+    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 flex justify-around p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] z-[200] transition-colors duration-500">
         {#each navItems as item}
             <button 
                 onclick={() => navigateTo(item.route as any)}

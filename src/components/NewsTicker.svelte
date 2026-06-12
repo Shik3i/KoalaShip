@@ -29,7 +29,7 @@
 
 <aside class="news-ticker border-b border-indigo-950/20 bg-indigo-950 text-white" aria-label="KoalaShip Satire-Newsticker">
   <div class="mx-auto flex h-10 max-w-7xl items-center gap-3 overflow-hidden px-4 sm:px-6 lg:px-8">
-    <span class="shrink-0 rounded bg-rose-500 px-2 py-1 text-[10px] font-black uppercase tracking-widest">Koala News</span>
+    <span class="hidden sm:inline-block shrink-0 rounded bg-rose-500 px-2 py-1 text-[10px] font-black uppercase tracking-widest">Koala News</span>
     <button
       onclick={pickNext}
       onmouseenter={() => paused = true}

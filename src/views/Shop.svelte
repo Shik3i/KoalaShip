@@ -14,6 +14,7 @@
   let sort = $state('recommended');
   let selectedProduct = $state<Product | null>(null);
   let selectedVariant = $state('Standard');
+  let descriptionExpanded = $state(false);
   let cartOpen = $state(false);
   let checkoutStep = $state<'CART' | 'DELIVERY' | 'SUMMARY' | 'SUCCESS'>('CART');
   let completedOrders = $state<import('../lib/types').Order[]>([]);
@@ -79,6 +80,7 @@
   function openProduct(product: Product) {
     selectedProduct = product;
     selectedVariant = product.variants?.[0]?.values?.[0]?.name ?? 'Standard';
+    descriptionExpanded = false;
   }
 
   function addSelected() {
@@ -107,7 +109,6 @@
            rating: randomIntSeeded(1, 5, prng)
         });
      }
-     // Keep original reviews if available, then append dynamic
      return [...(product.reviews || []), ...dynamicReviews];
   }
 
@@ -215,7 +216,12 @@
         
         <div class="space-y-6">
           <div><span class="text-yellow-500">★★★★★</span> <span class="font-bold">{selectedProduct.rating} · {selectedProduct.reviews.length} Bewertungen</span></div>
-          <p class="text-lg leading-relaxed text-slate-600 dark:text-slate-300">{selectedProduct.description}</p>
+          <div>
+             <p class="text-lg leading-relaxed text-slate-600 dark:text-slate-300 {descriptionExpanded ? '' : 'line-clamp-3 sm:line-clamp-none'}">{selectedProduct.description}</p>
+             <button onclick={() => descriptionExpanded = !descriptionExpanded} class="mt-2 text-sm font-bold text-indigo-600 sm:hidden">
+               {descriptionExpanded ? 'Weniger anzeigen' : 'Mehr lesen...'}
+             </button>
+          </div>
           
           {#if selectedProduct.variants?.length}
             {@const group = selectedProduct.variants[0]}
@@ -310,9 +316,10 @@
     </div>
   </div>
 {/if}
+
 {#if cartOpen}
   <div class="fixed inset-0 z-[110] flex justify-end bg-slate-950/60">
-    <div class="h-full w-full max-w-xl overflow-y-auto bg-white p-6 shadow-2xl dark:bg-slate-900">
+    <div class="h-full w-full sm:max-w-md overflow-y-auto bg-white p-6 shadow-2xl dark:bg-slate-900 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
       <div class="flex items-center justify-between"><h2 class="text-3xl font-black">Warenkorb</h2><button onclick={() => { cartOpen = false; checkoutStep = 'CART'; }} class="rounded-full bg-slate-100 px-4 py-2 text-xl dark:bg-slate-800">×</button></div>
       {#if checkoutStep === 'CART'}
       {#if user.cart?.length}
@@ -388,7 +395,33 @@
 {/if}
 
 {#if compareOpen}
-  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4"><div class="max-h-[90vh] w-full max-w-5xl overflow-auto rounded-3xl bg-white p-6 dark:bg-slate-900"><div class="flex justify-between"><h2 class="text-3xl font-black">Produktvergleich</h2><button onclick={() => compareOpen = false}>✕</button></div><div class="mt-6 grid gap-4 md:grid-cols-3">{#each comparedProducts as product}<div class="rounded-2xl border border-slate-200 p-5 dark:border-slate-700"><div class="text-center text-7xl">{product.imageUrl}</div><h3 class="mt-3 text-xl font-black">{product.name}</h3><p class="text-2xl font-black">{getProductPrice(product).toLocaleString('de-DE')} KC</p><p>★ {product.rating} · {product.stock} verfügbar</p>{#each Object.entries(product.specs ?? {}) as [name,value]}<p class="mt-2 border-t pt-2"><b>{name}:</b> {value}</p>{/each}<button onclick={() => toggleCompare(product.id)} class="mt-4 text-sm font-bold text-rose-500">Entfernen</button></div>{/each}</div>{#if !comparedProducts.length}<p class="p-12 text-center text-slate-500">Markiere bis zu drei Produkte mit ⇄.</p>{/if}</div></div>
+  <div class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 p-4">
+    <div class="max-h-[90vh] w-full max-w-5xl overflow-auto rounded-3xl bg-white p-6 dark:bg-slate-900">
+      <div class="flex justify-between items-center sticky top-0 bg-white/90 dark:bg-slate-900/90 py-2 z-10 backdrop-blur">
+        <h2 class="text-2xl sm:text-3xl font-black">Produktvergleich</h2>
+        <button onclick={() => compareOpen = false} class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex justify-center items-center font-bold">✕</button>
+      </div>
+      <div class="mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {#each comparedProducts as product}
+          <div class="rounded-2xl border border-slate-200 p-5 dark:border-slate-700 flex flex-col">
+            <div class="text-center text-7xl">{product.imageUrl}</div>
+            <h3 class="mt-3 text-xl font-black">{product.name}</h3>
+            <p class="text-2xl font-black">{getProductPrice(product).toLocaleString('de-DE')} KC</p>
+            <p>★ {product.rating} · {product.stock} verfügbar</p>
+            <div class="flex-1 mt-4">
+              {#each Object.entries(product.specs ?? {}) as [name,value]}
+                <p class="border-t pt-2 mt-2"><b>{name}:</b> {value}</p>
+              {/each}
+            </div>
+            <button onclick={() => toggleCompare(product.id)} class="mt-6 w-full py-2 bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400 rounded-xl font-bold">Entfernen</button>
+          </div>
+        {/each}
+      </div>
+      {#if !comparedProducts.length}
+        <p class="p-12 text-center text-slate-500">Markiere bis zu drei Produkte mit ⇄.</p>
+      {/if}
+    </div>
+  </div>
 {/if}
 
 {#if wishlistsOpen}
