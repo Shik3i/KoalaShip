@@ -1,19 +1,37 @@
-import type { UserProfile, Product, Order } from './types';
+import type { UserProfile, Product, Order, JobPreset, LatLng } from './types';
+
+// ==========================================
+// PRESETS
+// ==========================================
+
+export const jobPresets: JobPreset[] = [
+    { id: 'job_1', title: 'Minijobber', salary: 520, interval: 'WEEKLY' },
+    { id: 'job_2', title: 'Junior Dev', salary: 3200, interval: 'MONTHLY' },
+    { id: 'job_3', title: 'Senior 10x Rockstar', salary: 12500, interval: 'MONTHLY' },
+    { id: 'job_4', title: 'Koala-Influencer', salary: 25000, interval: 'MONTHLY' }
+];
 
 // ==========================================
 // STATE
 // ==========================================
 
 export const user = $state<UserProfile>({
+    name: null,
+    occupation: null,
+    lastSalaryPayment: null,
+    homeLocation: null,
+    warehouseLocation: null,
     mode: 'DEMO',
-    balance: 1000,
-    incomeRate: 10
+    balance: 0,
+    incomeRate: 0 // deprecated
 });
 
 export const products = $state<Product[]>([
     { id: 'p_1', name: 'Rolex aus Knetmasse', price: 5000, category: 'LUXURY', imageUrl: '⌚' },
     { id: 'p_2', name: 'Eine Dose frische Luft', price: 50, category: 'ABSURD', imageUrl: '💨' },
-    { id: 'p_3', name: 'Standard-Toilettenpapier', price: 5, category: 'EVERYDAY', imageUrl: '🧻' }
+    { id: 'p_3', name: 'Standard-Toilettenpapier', price: 5, category: 'EVERYDAY', imageUrl: '🧻' },
+    { id: 'p_4', name: 'Cyberpunk Implantat (defekt)', price: 15000, category: 'LUXURY', imageUrl: '🦾' },
+    { id: 'p_5', name: 'Premium Eukalyptus', price: 200, category: 'EVERYDAY', imageUrl: '🌿' }
 ]);
 
 export const orders = $state<Order[]>([]);
@@ -21,6 +39,37 @@ export const orders = $state<Order[]>([]);
 // ==========================================
 // ACTIONS
 // ==========================================
+
+export function resetUser() {
+    user.name = null;
+    user.occupation = null;
+    user.lastSalaryPayment = null;
+    user.homeLocation = null;
+    user.warehouseLocation = null;
+    user.balance = 0;
+    orders.splice(0, orders.length);
+    saveState();
+}
+
+export function completeOnboarding(name: string, job: JobPreset, homeLat: number, homeLng: number) {
+    user.name = name;
+    user.occupation = job;
+    user.homeLocation = { lat: homeLat, lng: homeLng };
+    
+    // Generate warehouse 15km away roughly (1 degree is ~111km)
+    // Random direction
+    const angle = Math.random() * Math.PI * 2;
+    const distanceDegree = 15 / 111; 
+    user.warehouseLocation = {
+        lat: homeLat + Math.cos(angle) * distanceDegree,
+        lng: homeLng + Math.sin(angle) * distanceDegree
+    };
+    
+    // Initial salary payout
+    user.balance = job.salary;
+    user.lastSalaryPayment = Date.now();
+    saveState();
+}
 
 export function addFunds(amount: number) {
     if (amount <= 0) return;
@@ -38,12 +87,10 @@ export function purchaseProduct(productId: string) {
     if (!product) return console.error('Produkt nicht gefunden');
     if (user.balance < product.price) return console.warn('Nicht genug Dopamin-Coins!');
 
-    // Geld abziehen
     user.balance -= product.price;
 
     const now = Date.now();
     const isDemo = user.mode === 'DEMO';
-    // Demo: 30 Sekunden ETA. Real: 2 Tage (Beispiel)
     const delay = isDemo ? 30 * 1000 : 2 * 24 * 60 * 60 * 1000;
 
     const startMessages = [
@@ -61,6 +108,7 @@ export function purchaseProduct(productId: string) {
         status: 'PROCESSING',
         mode: user.mode,
         deliveryEta: now + delay,
+        startLocation: user.warehouseLocation ? { ...user.warehouseLocation } : undefined,
         trackingSteps: [
             { timestamp: now, message: randomStartMsg }
         ]
@@ -88,7 +136,7 @@ export function openPackage(orderId: string) {
 // PERSISTENZ & BACKGROUND TICKER
 // ==========================================
 
-const STORAGE_KEY = 'koalaship_v1';
+const STORAGE_KEY = 'koalaship_v2';
 
 export function saveState() {
     if (typeof window === 'undefined') return;
@@ -131,13 +179,26 @@ export function initTicker() {
         const now = Date.now();
         let stateChanged = false;
 
-        // 1. Idle Income
-        if (user.incomeRate > 0) {
-            user.balance += user.incomeRate;
-            stateChanged = true;
+        // 1. Salary Check
+        if (user.name && user.occupation && user.lastSalaryPayment) {
+            const isDemo = user.mode === 'DEMO';
+            let intervalMs = 0;
+            
+            if (user.occupation.interval === 'WEEKLY') {
+                intervalMs = isDemo ? 60 * 1000 : 7 * 24 * 60 * 60 * 1000; // Demo: 1 min
+            } else {
+                intervalMs = isDemo ? 4 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000; // Demo: 4 min
+            }
+
+            if (now - user.lastSalaryPayment >= intervalMs) {
+                user.balance += user.occupation.salary;
+                user.lastSalaryPayment = now;
+                notifyBrowser(`Gehaltszahlung erhalten: ${user.occupation.salary} DC!`);
+                stateChanged = true;
+            }
         }
 
-        // 2. Logistik simulieren
+        // 2. Logistics Simulation
         for (const order of orders) {
             if (order.status === 'PROCESSING' || order.status === 'SHIPPED') {
                 if (now >= order.deliveryEta) {
