@@ -179,7 +179,7 @@
     </main>
 
     <footer class="border-t border-slate-200 bg-white/70 px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/70">
-      <button onclick={() => navigateTo('IMPRINT')} class="mx-3 font-bold hover:text-indigo-500">Imprint / Impressum</button>
+      <a href="https://koalastuff.net/legal" class="mx-3 font-bold hover:text-indigo-500">Imprint / Impressum</a>
       <button onclick={() => navigateTo('PRIVACY')} class="mx-3 font-bold hover:text-indigo-500">Privacy / Datenschutz</button>
       <a href="https://github.com/Shik3i/KoalaShip" target="_blank" rel="noopener noreferrer" class="mx-3 inline-flex items-center gap-1 font-bold hover:text-indigo-500">
         <img src="/icons/github.svg" alt="" class="h-4 w-4" />GitHub

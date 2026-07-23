@@ -6,6 +6,15 @@
   let language = $derived(i18nState.locale === 'DE' ? 'DE' : 'EN');
 </script>
 
+<svelte:head>
+  {#if page === 'IMPRINT'}
+    <title>Legal Notice | KoalaShip</title>
+    <meta name="description" content="The KoalaShip legal notice has moved to the central KoalaStuff legal notice." />
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href="https://koalastuff.net/legal" />
+  {/if}
+</svelte:head>
+
 <div class="mx-auto max-w-4xl space-y-6">
   <div class="flex flex-wrap items-center justify-between gap-4">
     <button onclick={() => history.length > 1 ? history.back() : navigateTo('ONBOARDING')} class="rounded-xl bg-slate-200 px-4 py-2 font-bold dark:bg-slate-700">
@@ -19,33 +28,13 @@
 
   <article class="legal-copy rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-10">
     {#if page === 'IMPRINT' && language === 'DE'}
-      <h1>Impressum</h1>
-      <p><strong>Stand:</strong> 12. Juni 2026</p>
-      <h2>Betreiber und Kontakt</h2>
-      <p>Timo (KoalaDev) – Privatperson<br />Deutschland<br />E-Mail: <a href="mailto:admin@koalastuff.net">admin@koalastuff.net</a><br />Mastodon: <a href="https://mastodon.social/@koalastuff" target="_blank" rel="me noopener">@koalastuff</a></p>
-      <h2>Hinweis auf privates Projekt</h2>
-      <p>Diese Website ist ein rein privates, nicht-kommerzielles Hobbyprojekt. Die Betreiberangaben werden freiwillig zur Transparenz gegenüber der Community bereitgestellt.</p>
-      <h2>Verantwortlich für den Inhalt</h2>
-      <p>Timo (KoalaDev)<br />Deutschland</p>
-      <h2>Hinweis zum Angebot</h2>
-      <p>KoalaShip ist eine spielerische Simulation. KoalaCoins, Gehälter, Produkte und Bestellungen sind fiktiv. Es werden keine echten Kaufverträge geschlossen und keine realen Zahlungen verarbeitet.</p>
-      <h2>Haftung für externe Links</h2>
-      <p>Für Inhalte externer Dienste und Websites sind deren jeweilige Betreiber verantwortlich. Zum Zeitpunkt der Verlinkung waren keine Rechtsverstöße erkennbar.</p>
-      <h2>Urheberrecht</h2>
-      <p>Die vom Betreiber erstellten Inhalte unterliegen dem deutschen Urheberrecht. Rechte an eingebundenen Open-Source-Komponenten verbleiben bei deren jeweiligen Urhebern und gelten nach ihren Lizenzbedingungen.</p>
+      <h1>Impressum umgezogen</h1>
+      <p>Das KoalaShip-Impressum ist jetzt unter der zentralen KoalaStuff-Adresse verfügbar.</p>
+      <p><a href="https://koalastuff.net/legal">Zentrales Impressum öffnen</a></p>
     {:else if page === 'IMPRINT'}
-      <h1>Legal Notice</h1>
-      <p><strong>Last updated:</strong> June 12, 2026</p>
-      <h2>Operator and contact</h2>
-      <p>Timo (KoalaDev) – private individual<br />Germany<br />Email: <a href="mailto:admin@koalastuff.net">admin@koalastuff.net</a><br />Mastodon: <a href="https://mastodon.social/@koalastuff" target="_blank" rel="me noopener">@koalastuff</a></p>
-      <h2>Private project notice</h2>
-      <p>This website is a private, non-commercial hobby project. Operator details are provided voluntarily for transparency toward the community.</p>
-      <h2>About this service</h2>
-      <p>KoalaShip is a playful simulation. KoalaCoins, salaries, products and orders are fictional. No real purchase contracts are concluded and no real payments are processed.</p>
-      <h2>External links</h2>
-      <p>The respective providers are responsible for external services and websites linked from this application.</p>
-      <h2>Copyright</h2>
-      <p>Content created by the operator is subject to German copyright law. Rights to included open-source components remain with their respective authors and are governed by their licenses.</p>
+      <h1>Legal notice moved</h1>
+      <p>The KoalaShip legal notice is now available at the central KoalaStuff address.</p>
+      <p><a href="https://koalastuff.net/legal">Open the central legal notice</a></p>
     {:else if language === 'DE'}
       <h1>Datenschutzerklärung</h1>
       <p><strong>Stand:</strong> 12. Juni 2026</p>
